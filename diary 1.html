@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luminary | Digital Diary</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        diary: {
+                            primary: '#5e35b1',
+                            secondary: '#7e57c2',
+                            accent: '#ff7043',
+                            light: '#d1c4e9',
+                            dark: '#4527a0',
+                            paper: '#f5f2e9',
+                            ink: '#3e2723',
+                            highlight: '#fff176'
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['Playfair Display', 'serif'],
+                        body: ['Raleway', 'sans-serif']
+                    },
+                    boxShadow: {
+                        'diary': '0 15px 35px rgba(94, 53, 177, 0.2)',
+                        'page': '0 5px 15px rgba(0, 0, 0, 0.08)'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root {
+            --page-width: 850px;
+            --page-height: 650px;
+            --transition-speed: 0.6s;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #e0d6ff 0%, #bbdefb 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-family: 'Raleway', sans-serif;
+            color: #333;
+            padding-bottom: 3rem;
+        }
+        
+        .diary-container {
+            perspective: 2000px;
+            width: 100%;
+            max-width: var(--page-width);
+            height: var(--page-height);
+            margin: 2rem auto;
+            position: relative;
+        }
+        
+        .diary-book {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform var(--transition-speed) cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        
+        .diary-cover {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #5e35b1 0%, #7e57c2 100%);
+            border-radius: 8px 16px 16px 8px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            backface-visibility: hidden;
+            transform-origin: left center;
+            cursor: pointer;
+            overflow: hidden;
+            z-index: 10;
+        }
+        
+        .cover-design {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 25%),
+                radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 25%);
+            opacity: 0.8;
+        }
+        
+        .diary-page {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #f5f2e9;
+            border-radius: 8px;
+            box-shadow: var(--tw-shadow);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            transform-origin: left center;
+            transition: transform var(--transition-speed) cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            backface-visibility: hidden;
+            overflow: hidden;
+            z-index: 5;
+        }
+        
+        .page-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            background: repeating-linear-gradient(
+                #f5f2e9,
+                #f5f2e9 24px,
+                #d9d4c3 25px,
+                #d9d4c3 26px
+            );
+            border: 1px solid #d9d4c3;
+            border-radius: 4px;
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+        
+        .page-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 40px;
+            width: 1px;
+            height: 100%;
+            background: rgba(200, 200, 200, 0.3);
+        }
+        
+        .page-header {
+            border-bottom: 2px solid #d1c4e9;
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .page-number {
+            position: absolute;
+            bottom: 15px;
+            right: 25px;
+            color: #aaa;
+            font-size: 0.9rem;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+        }
+        
+        .flipped {
+            transform: rotateY(-180deg);
+        }
+        
+        .entry-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #7e57c2;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .entry-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(126, 87, 194, 0.05), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .entry-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .entry-card:hover::before {
+            opacity: 1;
+        }
+        
+        .mood-option {
+            transition: all 0.3s ease;
+            opacity: 0.7;
+            cursor: pointer;
+            text-align: center;
+            padding: 0.5rem;
+            border-radius: 50%;
+        }
+        
+        .mood-option.active, 
+        .mood-option:hover {
+            opacity: 1;
+            transform: scale(1.15);
+            background: rgba(126, 87, 194, 0.1);
+        }
+        
+        .pen-stroke {
+            position: absolute;
+            height: 2px;
+            background: #3e2723;
+            transform-origin: 0 0;
+            z-index: 2;
+        }
+        
+        .floating-pen {
+            position: absolute;
+            z-index: 100;
+            transition: transform 0.5s ease;
+            filter: drop-shadow(0 3px 5px rgba(0,0,0,0.2));
+        }
+        
+        .weather-icon {
+            font-size: 1.6rem;
+            margin-right: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .tag-pill {
+            background: #d1c4e9;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.85rem;
+            margin-right: 8px;
+            margin-bottom: 5px;
+            display: inline-block;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .tag-pill:hover {
+            background: #7e57c2;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .threejs-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .nav-tabs .nav-link {
+            font-weight: 600;
+            color: #5e35b1;
+            padding: 0.8rem 1.5rem;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: #7e57c2;
+            color: white;
+            border-color: #7e57c2;
+        }
+        
+        .stats-card {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .diary-control {
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+        
+        .secret-lock {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: #ff7043;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        .encrypted-content {
+            filter: blur(8px);
+            user-select: none;
+        }
+        
+        .mood-chart {
+            height: 120px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            padding: 0 1rem;
+        }
+        
+        .chart-bar {
+            width: 22px;
+            background: linear-gradient(to top, #7e57c2, #5e35b1);
+            border-radius: 4px 4px 0 0;
+            position: relative;
+        }
+        
+        .chart-bar::after {
+            content: attr(data-count);
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            color: #5e35b1;
+        }
+        
+        .calendar-day {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .calendar-day.has-entry:hover {
+            background: #7e57c2;
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #7e57c2;
+            border-radius: 4px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            :root {
+                --page-height: 550px;
+            }
+            
+            .diary-container {
+                margin: 1rem auto;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            :root {
+                --page-height: 500px;
+                --page-width: 95%;
+            }
+            
+            .page-content {
+                padding: 1rem;
+            }
+            
+            .diary-control {
+                padding: 1rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            :root {
+                --page-height: 450px;
+            }
+            
+            .diary-page {
+                padding: 1.5rem 1rem;
+            }
+            
+            .page-header h4 {
+                font-size: 1.1rem;
+            }
+        }
+        
+        /* Keyframe animations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .floating {
+            animation: float 4s ease-in-out infinite;
+        }
+        
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-diary-primary shadow-sm py-3">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <i class="fas fa-book-open fa-lg me-2"></i>
+                <span class="fw-bold fs-4">Luminary Diary</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="fas fa-home me-1"></i> Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-calendar-alt me-1"></i> Calendar</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-chart-pie me-1"></i> Insights</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-cog me-1"></i> Settings</a>
+                    </li>
+                    <li class="nav-item ms-2">
+                        <a class="btn btn-outline-light" href="#"><i class="fas fa-user me-1"></i> Account</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold font-heading text-diary-dark mb-3">Your Personal Digital Sanctuary</h1>
+            <p class="lead text-muted">Capture life's moments with our beautifully crafted digital diary</p>
+            <div class="mt-4">
+                <span class="badge bg-diary-accent me-2">Secure Encryption</span>
+                <span class="badge bg-diary-secondary me-2">Mood Tracking</span>
+                <span class="badge bg-diary-primary">Rich Media</span>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Left Panel: Diary Controls -->
+            <div class="col-lg-4">
+                <div class="diary-control">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-diary-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="fas fa-plus fa-lg"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h5 class="mb-0">New Entry</h5>
+                            <p class="text-muted mb-0">Start documenting your day</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label text-diary-dark fw-medium">Date</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                            <input type="date" class="form-control" id="entry-date" value="">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label text-diary-dark fw-medium">Title</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-heading"></i></span>
+                            <input type="text" class="form-control" id="entry-title" placeholder="What's on your mind?">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label text-diary-dark fw-medium">Mood</label>
+                        <div class="d-flex justify-content-between mood-selector bg-diary-light p-2 rounded">
+                            <div class="mood-option" data-mood="sad">
+                                <i class="fas fa-frown fa-2x text-primary"></i>
+                                <div class="small mt-1">Sad</div>
+                            </div>
+                            <div class="mood-option" data-mood="neutral">
+                                <i class="fas fa-meh fa-2x text-secondary"></i>
+                                <div class="small mt-1">Neutral</div>
+                            </div>
+                            <div class="mood-option active" data-mood="happy">
+                                <i class="fas fa-smile fa-2x text-success"></i>
+                                <div class="small mt-1">Happy</div>
+                            </div>
+                            <div class="mood-option" data-mood="excited">
+                                <i class="fas fa-grin-stars fa-2x text-warning"></i>
+                                <div class="small mt-1">Excited</div>
+                            </div>
+                            <div class="mood-option" data-mood="loved">
+                                <i class="fas fa-heart fa-2x text-danger"></i>
+                                <div class="small mt-1">Loved</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label text-diary-dark fw-medium">Weather</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-outline-diary-primary weather-option active" data-weather="sunny">
+                                <i class="fas fa-sun weather-icon"></i> Sunny
+                            </button>
+                            <button class="btn btn-outline-diary-primary weather-option" data-weather="cloudy">
+                                <i class="fas fa-cloud weather-icon"></i> Cloudy
+                            </button>
+                            <button class="btn btn-outline-diary-primary weather-option" data-weather="rainy">
+                                <i class="fas fa-cloud-rain weather-icon"></i> Rainy
+                            </button>
+                            <button class="btn btn-outline-diary-primary weather-option" data-weather="stormy">
+                                <i class="fas fa-bolt weather-icon"></i> Stormy
+                            </button>
+                            <button class="btn btn-outline-diary-primary weather-option" data-weather="snowy">
+                                <i class="fas fa-snowflake weather-icon"></i> Snowy
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label text-diary-dark fw-medium">Tags</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-tags"></i></span>
+                            <input type="text" class="form-control" id="entry-tags" placeholder="Add tags (separate by commas)">
+                        </div>
+                        <div class="mt-2">
+                            <span class="tag-pill">work</span>
+                            <span class="tag-pill">travel</span>
+                            <span class="tag-pill">family</span>
+                            <span class="tag-pill">ideas</span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button class="btn btn-diary-primary btn-lg fw-bold" id="create-entry">
+                            <i class="fas fa-feather-alt me-2"></i>Start Writing
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="diary-control">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-diary-accent text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="fas fa-chart-line fa-lg"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h5 class="mb-0">Monthly Insights</h5>
+                            <p class="text-muted mb-0">Your journaling patterns</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <div class="stats-card p-3 text-center">
+                                <div class="text-diary-primary fs-1 fw-bold">24</div>
+                                <div class="text-muted small">Entries this month</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stats-card p-3 text-center">
+                                <div class="text-diary-primary fs-1 fw-bold">87%</div>
+                                <div class="text-muted small">Positive days</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label text-diary-dark fw-medium">Mood Distribution</label>
+                        <div class="mood-chart">
+                            <div class="chart-bar" style="height: 40%;" data-count="5"></div>
+                            <div class="chart-bar" style="height: 60%;" data-count="8"></div>
+                            <div class="chart-bar" style="height: 90%;" data-count="12"></div>
+                            <div class="chart-bar" style="height: 50%;" data-count="7"></div>
+                            <div class="chart-bar" style="height: 70%;" data-count="10"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button class="btn btn-outline-diary-primary">
+                            <i class="fas fa-chart-bar me-2"></i>View Full Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Panel: Diary Book -->
+            <div class="col-lg-8">
+                <div class="diary-container">
+                    <div class="diary-book" id="diary-book">
+                        <!-- Book Cover (Front) -->
+                        <div class="diary-cover" id="front-cover">
+                            <div class="cover-design"></div>
+                            <div class="text-center p-5 position-relative z-1">
+                                <div class="floating mb-4">
+                                    <i class="fas fa-feather fa-4x text-white"></i>
+                                </div>
+                                <h1 class="font-heading fw-bold mb-4 display-3" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.3);">Luminary</h1>
+                                <p class="fs-5 mb-4 px-4" style="max-width: 600px; margin: 0 auto;">Your personal sanctuary for thoughts, memories, and dreams</p>
+                                <div class="mt-5 pulse">
+                                    <button class="btn btn-light btn-lg px-5 py-3 rounded-pill fw-bold" id="open-diary">
+                                        Open Diary <i class="fas fa-arrow-right ms-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Book Cover (Back) -->
+                        <div class="diary-cover" id="back-cover" style="transform: rotateY(180deg); background: linear-gradient(45deg, #4527a0 0%, #5e35b1 100%);">
+                            <div class="cover-design"></div>
+                            <div class="text-center p-5 position-relative z-1">
+                                <h2 class="font-heading mb-4">Your Story Continues...</h2>
+                                <p class="fs-5 mb-4">Close the diary to save your progress</p>
+                                <div class="mt-5">
+                                    <button class="btn btn-light btn-lg px-5 py-3 rounded-pill fw-bold" id="close-diary">
+                                        <i class="fas fa-times me-2"></i> Close Diary
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Diary Page 1: Today's Entry -->
+                        <div class="diary-page" id="page-1" style="transform: rotateY(-180deg);">
+                            <div class="page-header d-flex justify-content-between align-items-center">
+                                <h4 class="font-heading text-diary-dark mb-0">Today's Reflection</h4>
+                                <div class="text-diary-secondary">
+                                    <span id="entry-display-date">June 26, 2025</span>
+                                    <i class="fas fa-sun text-warning ms-2"></i>
+                                    <i class="fas fa-smile text-success ms-2"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="page-content" id="page-content-1">
+                                <div class="secret-lock">
+                                    <i class="fas fa-lock fa-lg"></i>
+                                </div>
+                                
+                                <h3 class="font-heading mb-4" id="entry-display-title">A Beautiful Day in the Park</h3>
+                                
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="position-relative">
+                                            <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80" class="img-fluid rounded shadow-sm" alt="Park scene">
+                                            <div class="position-absolute bottom-0 start-0 p-2 text-white bg-dark bg-opacity-50 w-100">
+                                                <i class="fas fa-camera me-1"></i> Riverside Park
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mt-3 mt-md-0">
+                                        <div class="bg-diary-light p-3 rounded">
+                                            <h5 class="font-heading text-diary-primary">Today's Highlights</h5>
+                                            <ul class="mb-0">
+                                                <li>Picnic with friends</li>
+                                                <li>Beautiful sunset views</li>
+                                                <li>Laughed at Alex's jokes</li>
+                                                <li>Planned next meetup</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <p class="lead">Today was truly wonderful. I met up with some old friends at Riverside Park...</p>
+                                
+                                <p>The weather was absolutely perfect - sunny with a light breeze. We found a nice spot under a large oak tree and spread out our picnic blanket. Sarah brought her famous lemonade, and Mark grilled some veggie burgers. It felt so good to be outdoors after being cooped up all week.</p>
+                                
+                                <p>We talked for hours about everything and nothing. It's amazing how time flies when you're with good company. Emma shared stories about her recent trip to Italy, and we all laughed at Alex's terrible dad jokes. Moments like these remind me how important it is to nurture friendships.</p>
+                                
+                                <p>As the sun began to set, we packed up and made plans to do this again next month. I left feeling refreshed and grateful for these special people in my life.</p>
+                                
+                                <div class="mt-4 pt-3 border-top">
+                                    <h6 class="font-heading text-diary-secondary">Tags</h6>
+                                    <div>
+                                        <span class="tag-pill">friends</span>
+                                        <span class="tag-pill">outdoors</span>
+                                        <span class="tag-pill">picnic</span>
+                                        <span class="tag-pill">memories</span>
+                                        <span class="tag-pill">weekend</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-3">
+                                <button class="btn btn-outline-diary-primary" id="prev-page">
+                                    <i class="fas fa-arrow-left me-2"></i> Previous
+                                </button>
+                                <button class="btn btn-diary-primary" id="next-page">
+                                    Write More <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="page-number">Page 1</div>
+                        </div>
+                        
+                        <!-- Diary Page 2: Writing Area -->
+                        <div class="diary-page" id="page-2">
+                            <div class="page-header d-flex justify-content-between align-items-center">
+                                <h4 class="font-heading text-diary-dark mb-0">Your Thoughts</h4>
+                                <div class="text-diary-secondary">
+                                    <span id="entry-current-date">June 26, 2025</span>
+                                    <i class="fas fa-feather-alt ms-2"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="page-content">
+                                <div class="mb-4">
+                                    <input type="text" class="form-control border-0 bg-transparent p-0 fs-3 font-heading fw-bold" placeholder="Entry Title" id="writing-title" value="A Beautiful Day in the Park">
+                                </div>
+                                
+                                <textarea class="form-control border-0 bg-transparent p-0" rows="15" placeholder="Begin your entry here..." id="writing-content" style="resize: none; min-height: 300px;">Today was truly wonderful. I met up with some old friends at Riverside Park...
+
+The weather was absolutely perfect - sunny with a light breeze. We found a nice spot under a large oak tree and spread out our picnic blanket. Sarah brought her famous lemonade, and Mark grilled some veggie burgers. It felt so good to be outdoors after being cooped up all week.
+
+We talked for hours about everything and nothing. It's amazing how time flies when you're with good company. Emma shared stories about her recent trip to Italy, and we all laughed at Alex's terrible dad jokes. Moments like these remind me how important it is to nurture friendships.
+
+As the sun began to set, we packed up and made plans to do this again next month. I left feeling refreshed and grateful for these special people in my life.</textarea>
+                                
+                                <div class="mt-4 pt-3 border-top">
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2 text-diary-secondary fw-medium">Tags:</span>
+                                        <input type="text" class="form-control form-control-sm d-inline-block w-auto" id="writing-tags" value="friends, outdoors, picnic, memories">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-3">
+                                <button class="btn btn-outline-diary-primary" id="prev-page-2">
+                                    <i class="fas fa-arrow-left me-2"></i> Back
+                                </button>
+                                <button class="btn btn-diary-primary" id="save-entry">
+                                    <i class="fas fa-save me-2"></i> Save Entry
+                                </button>
+                            </div>
+                            
+                            <div class="page-number">Page 2</div>
+                        </div>
+                        
+                        <!-- Diary Page 3: Calendar View -->
+                        <div class="diary-page" id="page-3">
+                            <div class="page-header d-flex justify-content-between align-items-center">
+                                <h4 class="font-heading text-diary-dark mb-0">Journal Calendar</h4>
+                                <div class="text-diary-secondary">
+                                    <span>June 2025</span>
+                                    <i class="fas fa-calendar-alt ms-2"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="page-content">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <button class="btn btn-sm btn-outline-diary-primary">
+                                        <i class="fas fa-chevron-left me-1"></i> May
+                                    </button>
+                                    <h5 class="font-heading text-diary-primary mb-0">June 2025</h5>
+                                    <button class="btn btn-sm btn-outline-diary-primary">
+                                        July <i class="fas fa-chevron-right ms-1"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="calendar-grid mb-4">
+                                    <div class="row text-center fw-medium text-diary-secondary mb-3">
+                                        <div class="col p-2">Sun</div>
+                                        <div class="col p-2">Mon</div>
+                                        <div class="col p-2">Tue</div>
+                                        <div class="col p-2">Wed</div>
+                                        <div class="col p-2">Thu</div>
+                                        <div class="col p-2">Fri</div>
+                                        <div class="col p-2">Sat</div>
+                                    </div>
+                                    
+                                    <div class="row mb-2">
+                                        <div class="col p-2"></div>
+                                        <div class="col p-2"></div>
+                                        <div class="col p-2"></div>
+                                        <div class="col p-2"></div>
+                                        <div class="col p-2"></div>
+                                        <div class="col p-2"></div>
+                                        <div class="col p-2 calendar-day has-entry">1</div>
+                                    </div>
+                                    
+                                    <div class="row mb-2">
+                                        <div class="col p-2 calendar-day">2</div>
+                                        <div class="col p-2 calendar-day has-entry">3</div>
+                                        <div class="col p-2 calendar-day">4</div>
+                                        <div class="col p-2 calendar-day has-entry">5</div>
+                                        <div class="col p-2 calendar-day has-entry">6</div>
+                                        <div class="col p-2 calendar-day">7</div>
+                                        <div class="col p-2 calendar-day">8</div>
+                                    </div>
+                                    
+                                    <div class="row mb-2">
+                                        <div class="col p-2 calendar-day has-entry">9</div>
+                                        <div class="col p-2 calendar-day">10</div>
+                                        <div class="col p-2 calendar-day">11</div>
+                                        <div class="col p-2 calendar-day">12</div>
+                                        <div class="col p-2 calendar-day has-entry">13</div>
+                                        <div class="col p-2 calendar-day has-entry">14</div>
+                                        <div class="col p-2 calendar-day">15</div>
+                                    </div>
+                                    
+                                    <div class="row mb-2">
+                                        <div class="col p-2 calendar-day">16</div>
+                                        <div class="col p-2 calendar-day has-entry">17</div>
+                                        <div class="col p-2 calendar-day">18</div>
+                                        <div class="col p-2 calendar-day has-entry">19</div>
+                                        <div class="col p-2 calendar-day">20</div>
+                                        <div class="col p-2 calendar-day has-entry">21</div>
+                                        <div class="col p-2 calendar-day">22</div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col p-2 calendar-day has-entry">23</div>
+                                        <div class="col p-2 calendar-day">24</div>
+                                        <div class="col p-2 calendar-day has-entry">25</div>
+                                        <div class="col p-2 calendar-day has-entry active">26</div>
+                                        <div class="col p-2 calendar-day">27</div>
+                                        <div class="col p-2 calendar-day">28</div>
+                                        <div class="col p-2 calendar-day">29</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-diary-light p-3 rounded">
+                                    <h5 class="font-heading text-diary-primary">Entries on June 26</h5>
+                                    <div class="list-group">
+                                        <a href="#" class="list-group-item list-group-item-action border-0 bg-transparent p-2">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-book text-diary-primary me-3"></i>
+                                                <div>
+                                                    <div class="fw-medium">Morning Reflection</div>
+                                                    <small class="text-muted">8:30 AM</small>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <a href="#" class="list-group-item list-group-item-action border-0 bg-transparent p-2">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-book text-diary-primary me-3"></i>
+                                                <div>
+                                                    <div class="fw-medium">Park Adventure</div>
+                                                    <small class="text-muted">4:15 PM</small>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <a href="#" class="list-group-item list-group-item-action border-0 bg-transparent p-2">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-book text-diary-primary me-3"></i>
+                                                <div>
+                                                    <div class="fw-medium">Evening Thoughts</div>
+                                                    <small class="text-muted">9:45 PM</small>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-3">
+                                <button class="btn btn-outline-diary-primary" id="prev-page-3">
+                                    <i class="fas fa-arrow-left me-2"></i> Previous
+                                </button>
+                                <button class="btn btn-diary-primary" id="next-page-3">
+                                    Continue <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="page-number">Page 3</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Floating Pen -->
+                    <div class="floating-pen" id="floating-pen">
+                        <i class="fas fa-pen-fancy fa-3x text-diary-dark"></i>
+                    </div>
+                    
+                    <!-- Three.js Container -->
+                    <div class="threejs-container" id="three-container"></div>
+                </div>
+                
+                <!-- Diary Controls -->
+                <div class="d-flex justify-content-center mt-4">
+                    <div class="btn-group shadow-sm">
+                        <button class="btn btn-outline-diary-primary">
+                            <i class="fas fa-book me-2"></i> All Entries
+                        </button>
+                        <button class="btn btn-outline-diary-primary">
+                            <i class="fas fa-search me-2"></i> Search
+                        </button>
+                        <button class="btn btn-outline-diary-primary">
+                            <i class="fas fa-download me-2"></i> Export
+                        </button>
+                        <button class="btn btn-outline-diary-primary">
+                            <i class="fas fa-lock me-2"></i> Lock Diary
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Entries Section -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h4 class="font-heading mb-0">
+                            <i class="fas fa-history me-2 text-diary-primary"></i> Recent Entries
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-4">
+                                <div class="entry-card card h-100 border-0 shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <h5 class="card-title font-heading mb-0">Weekend at the Lake</h5>
+                                            <small class="text-muted">Jun 24</small>
+                                        </div>
+                                        <p class="card-text">Spent a relaxing weekend at Crystal Lake with family. The water was perfect for swimming...</p>
+                                        <div class="mt-auto">
+                                            <small class="text-muted"><i class="fas fa-smile text-success me-1"></i> Happy • <i class="fas fa-sun text-warning me-1"></i> Sunny</small>
+                                            <div class="mt-2">
+                                                <span class="tag-pill">family</span>
+                                                <span class="tag-pill">vacation</span>
+                                                <span class="tag-pill">nature</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-4">
+                                <div class="entry-card card h-100 border-0 shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <h5 class="card-title font-heading mb-0">Productive Work Day</h5>
+                                            <small class="text-muted">Jun 23</small>
+                                        </div>
+                                        <p class="card-text">Finished the project ahead of schedule! The team collaboration was excellent...</p>
+                                        <div class="mt-auto">
+                                            <small class="text-muted"><i class="fas fa-grin-stars text-warning me-1"></i> Excited • <i class="fas fa-cloud text-info me-1"></i> Cloudy</small>
+                                            <div class="mt-2">
+                                                <span class="tag-pill">work</span>
+                                                <span class="tag-pill">achievement</span>
+                                                <span class="tag-pill">team</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-4">
+                                <div class="entry-card card h-100 border-0 shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <h5 class="card-title font-heading mb-0">Quiet Evening</h5>
+                                            <small class="text-muted">Jun 20</small>
+                                        </div>
+                                        <p class="card-text">Enjoyed a quiet evening at home with a good book. Sometimes solitude is exactly what you need...</p>
+                                        <div class="mt-auto">
+                                            <small class="text-muted"><i class="fas fa-meh text-secondary me-1"></i> Neutral • <i class="fas fa-cloud-rain text-primary me-1"></i> Rainy</small>
+                                            <div class="mt-2">
+                                                <span class="tag-pill">reading</span>
+                                                <span class="tag-pill">relaxation</span>
+                                                <span class="tag-pill">home</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="bg-diary-dark text-white py-5 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5 class="font-heading mb-3">Luminary Diary</h5>
+                    <p class="mb-0">Capture your life's journey in a beautiful, interactive digital journal. Your memories deserve a special place.</p>
+                </div>
+                <div class="col-md-2 mb-4 mb-md-0">
+                    <h5 class="mb-3">Features</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-white text-decoration-none">Secure Diary</a></li>
+                        <li class="mb-2"><a href="#" class="text-white text-decoration-none">Mood Tracking</a></li>
+                        <li class="mb-2"><a href="#" class="text-white text-decoration-none">Calendar View</a></li>
+                        <li><a href="#" class="text-white text-decoration-none">Data Insights</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2 mb-4 mb-md-0">
+                    <h5 class="mb-3">Resources</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-white text-decoration-none">Help Center</a></li>
+                        <li class="mb-2"><a href="#" class="text-white text-decoration-none">Tutorials</a></li>
+                        <li class="mb-2"><a href="#" class="text-white text-decoration-none">Blog</a></li>
+                        <li><a href="#" class="text-white text-decoration-none">Community</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="mb-3">Subscribe to Newsletter</h5>
+                    <div class="input-group mb-3">
+                        <input type="email" class="form-control" placeholder="Your email address">
+                        <button class="btn btn-diary-primary" type="button">Subscribe</button>
+                    </div>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-white"><i class="fab fa-facebook fa-lg"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-twitter fa-lg"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-instagram fa-lg"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-github fa-lg"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4">
+            <p class="text-center mb-0">&copy; 2025 Luminary Diary. All rights reserved. Crafted with <i class="fas fa-heart text-danger"></i></p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Initialize the diary
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set current date as default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('entry-date').value = today;
+            
+            // Format date for display
+            const displayDate = new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            document.getElementById('entry-display-date').textContent = displayDate;
+            document.getElementById('entry-current-date').textContent = displayDate;
+            
+            // Diary book functionality
+            const diaryBook = document.getElementById('diary-book');
+            const frontCover = document.getElementById('front-cover');
+            const backCover = document.getElementById('back-cover');
+            const page1 = document.getElementById('page-1');
+            const page2 = document.getElementById('page-2');
+            const page3 = document.getElementById('page-3');
+            const openBtn = document.getElementById('open-diary');
+            const closeBtn = document.getElementById('close-diary');
+            const nextPageBtn = document.getElementById('next-page');
+            const prevPageBtn = document.getElementById('prev-page');
+            const prevPage2Btn = document.getElementById('prev-page-2');
+            const saveBtn = document.getElementById('save-entry');
+            const floatingPen = document.getElementById('floating-pen');
+            
+            let isBookOpen = false;
+            let currentPage = 1;
+            
+            // Open the diary
+            openBtn.addEventListener('click', function() {
+                diaryBook.style.transform = 'rotateY(-180deg)';
+                isBookOpen = true;
+            });
+            
+            // Close the diary
+            closeBtn.addEventListener('click', function() {
+                diaryBook.style.transform = 'rotateY(0deg)';
+                isBookOpen = false;
+            });
+            
+            // Page navigation
+            nextPageBtn.addEventListener('click', function() {
+                if (currentPage === 1) {
+                    page1.classList.add('flipped');
+                    currentPage = 2;
+                }
+            });
+            
+            prevPageBtn.addEventListener('click', function() {
+                if (currentPage === 1) {
+                    diaryBook.style.transform = 'rotateY(0deg)';
+                    isBookOpen = false;
+                }
+            });
+            
+            prevPage2Btn.addEventListener('click', function() {
+                if (currentPage === 2) {
+                    page1.classList.remove('flipped');
+                    currentPage = 1;
+                }
+            });
+            
+            // Save entry
+            saveBtn.addEventListener('click', function() {
+                // Show success message
+                const toast = document.createElement('div');
+                toast.className = 'position-fixed bottom-0 end-0 p-3';
+                toast.style.zIndex = '11';
+                toast.innerHTML = `
+                    <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="toast-header bg-success text-white">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong class="me-auto">Success</strong>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body">
+                            Your diary entry has been saved successfully!
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                
+                // Remove toast after 3 seconds
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            });
+            
+            // Mood selection
+            const moodOptions = document.querySelectorAll('.mood-option');
+            moodOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    moodOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            
+            // Weather selection
+            const weatherOptions = document.querySelectorAll('.weather-option');
+            weatherOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    weatherOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            
+            // Create new entry
+            document.getElementById('create-entry').addEventListener('click', function() {
+                const title = document.getElementById('entry-title').value || 'Untitled Entry';
+                document.getElementById('writing-title').value = title;
+                document.getElementById('writing-content').value = '';
+                document.getElementById('writing-tags').value = '';
+                
+                if (!isBookOpen) {
+                    diaryBook.style.transform = 'rotateY(-180deg)';
+                    isBookOpen = true;
+                }
+                
+                // Reset to first page
+                page1.classList.remove('flipped');
+                currentPage = 1;
+                
+                // Set date
+                const selectedDate = document.getElementById('entry-date').value;
+                const formattedDate = new Date(selectedDate).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                document.getElementById('entry-display-date').textContent = formattedDate;
+                document.getElementById('entry-current-date').textContent = formattedDate;
+                
+                // Set mood and weather
+                const activeMood = document.querySelector('.mood-option.active').dataset.mood;
+                const activeWeather = document.querySelector('.weather-option.active')?.dataset.weather || 'sunny';
+                
+                // Simulate updating the display
+                console.log(`Creating new entry: ${title} on ${formattedDate} (Mood: ${activeMood}, Weather: ${activeWeather})`);
+            });
+            
+            // Toggle content lock
+            document.querySelector('.secret-lock').addEventListener('click', function() {
+                const content = document.getElementById('page-content-1');
+                const lockIcon = this.querySelector('i');
+                
+                if (content.classList.contains('encrypted-content')) {
+                    content.classList.remove('encrypted-content');
+                    lockIcon.classList.remove('fa-lock');
+                    lockIcon.classList.add('fa-lock-open');
+                } else {
+                    content.classList.add('encrypted-content');
+                    lockIcon.classList.remove('fa-lock-open');
+                    lockIcon.classList.add('fa-lock');
+                }
+            });
+            
+            // Animate floating pen
+            let penAngle = 0;
+            function animatePen() {
+                if (isBookOpen) {
+                    const radius = 120;
+                    const centerX = window.innerWidth / 2;
+                    const centerY = window.innerHeight / 2;
+                    
+                    penAngle += 0.015;
+                    const x = centerX + Math.cos(penAngle) * radius - 30;
+                    const y = centerY + Math.sin(penAngle * 0.7) * radius - 30;
+                    
+                    floatingPen.style.transform = `translate(${x}px, ${y}px) rotate(${penAngle * 8}rad)`;
+                    floatingPen.style.opacity = '1';
+                } else {
+                    floatingPen.style.opacity = '0';
+                }
+                requestAnimationFrame(animatePen);
+            }
+            animatePen();
+            
+            // Initialize Three.js scene for decorative particles
+            const threeContainer = document.getElementById('three-container');
+            if (threeContainer) {
+                // Set up scene, camera, and renderer
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, threeContainer.clientWidth / threeContainer.clientHeight, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer({ alpha: true });
+                
+                renderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
+                threeContainer.appendChild(renderer.domElement);
+                
+                // Create decorative particles
+                const particles = [];
+                const particleCount = 150;
+                const colors = [0x5e35b1, 0x7e57c2, 0xff7043, 0xd1c4e9];
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const size = Math.random() * 0.15 + 0.05;
+                    const geometry = new THREE.BoxGeometry(size, size, size);
+                    
+                    const material = new THREE.MeshBasicMaterial({ 
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        transparent: true,
+                        opacity: 0.7
+                    });
+                    
+                    const particle = new THREE.Mesh(geometry, material);
+                    
+                    // Random position
+                    particle.position.x = Math.random() * 6 - 3;
+                    particle.position.y = Math.random() * 4 - 2;
+                    particle.position.z = Math.random() * 5 - 2.5;
+                    
+                    // Store velocity for animation
+                    particle.userData = {
+                        velocity: new THREE.Vector3(
+                            (Math.random() - 0.5) * 0.01,
+                            (Math.random() - 0.5) * 0.01,
+                            (Math.random() - 0.5) * 0.01
+                        ),
+                        rotationSpeed: new THREE.Vector3(
+                            Math.random() * 0.02,
+                            Math.random() * 0.02,
+                            Math.random() * 0.02
+                        )
+                    };
+                    
+                    scene.add(particle);
+                    particles.push(particle);
+                }
+                
+                camera.position.z = 5;
+                
+                // Animation loop
+                function animateParticles() {
+                    requestAnimationFrame(animateParticles);
+                    
+                    particles.forEach(particle => {
+                        // Update position
+                        particle.position.add(particle.userData.velocity);
+                        
+                        // Bounce off imaginary walls
+                        if (Math.abs(particle.position.x) > 3) {
+                            particle.userData.velocity.x *= -1;
+                        }
+                        if (Math.abs(particle.position.y) > 2) {
+                            particle.userData.velocity.y *= -1;
+                        }
+                        if (Math.abs(particle.position.z) > 2.5) {
+                            particle.userData.velocity.z *= -1;
+                        }
+                        
+                        // Rotate
+                        particle.rotation.x += particle.userData.rotationSpeed.x;
+                        particle.rotation.y += particle.userData.rotationSpeed.y;
+                        particle.rotation.z += particle.userData.rotationSpeed.z;
+                    });
+                    
+                    renderer.render(scene, camera);
+                }
+                
+                animateParticles();
+                
+                // Handle window resize
+                window.addEventListener('resize', function() {
+                    camera.aspect = threeContainer.clientWidth / threeContainer.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
+                });
+            }
+            
+            // Simulate pen strokes on the page
+            function createPenStroke() {
+                if (!isBookOpen || currentPage !== 2) return;
+                
+                const pageContent = document.querySelector('.page-content');
+                const penStroke = document.createElement('div');
+                penStroke.className = 'pen-stroke';
+                
+                const startX = Math.random() * 50 + 20;
+                const startY = Math.random() * (pageContent.clientHeight - 100) + 50;
+                const length = Math.random() * 80 + 20;
+                const angle = Math.random() * Math.PI;
+                
+                penStroke.style.width = `${length}px`;
+                penStroke.style.left = `${startX}px`;
+                penStroke.style.top = `${startY}px`;
+                penStroke.style.transform = `rotate(${angle}rad)`;
+                penStroke.style.opacity = Math.random() * 0.5 + 0.3;
+                
+                pageContent.appendChild(penStroke);
+                
+                // Remove after animation
+                setTimeout(() => {
+                    penStroke.style.opacity = '0';
+                    setTimeout(() => {
+                        if (pageContent.contains(penStroke)) {
+                            pageContent.removeChild(penStroke);
+                        }
+                    }, 500);
+                }, 1500);
+            }
+            
+            // Periodically create pen strokes
+            setInterval(createPenStroke, 300);
+            
+            // Calendar day interaction
+            document.querySelectorAll('.calendar-day.has-entry').forEach(day => {
+                day.addEventListener('click', function() {
+                    document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Simulate loading entries
+                    console.log(`Loading entries for ${this.textContent} June 2025`);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
