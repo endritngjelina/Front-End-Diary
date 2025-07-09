@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Personal Diary - Journey of Thoughts</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
+        
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --dark-gradient: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        #background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .glass-effect {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar {
+            background: var(--glass-bg) !important;
+            backdrop-filter: blur(15px);
+            border: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 1.8rem;
+            color: white !important;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-radius: 10px;
+            padding: 0.5rem 1rem !important;
+            margin: 0 0.2rem;
+        }
+
+        .nav-link:hover {
+            color: white !important;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .hero-section {
+            min-height: 60vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4);
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .hero-subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+
+        .btn-custom {
+            background: var(--secondary-gradient);
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            animation: fadeInUp 1s ease-out 0.6s both;
+        }
+
+        .btn-custom:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            color: white;
+        }
+
+        .diary-container {
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+
+        .diary-sidebar {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 2rem;
+            height: fit-content;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--glass-border);
+        }
+
+        .diary-main {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 2rem;
+            min-height: 80vh;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--glass-border);
+        }
+
+        .entry-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border-left: 5px solid var(--accent-color);
+        }
+
+        .entry-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .entry-date {
+            font-weight: 600;
+            color: var(--accent-color);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .entry-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0.5rem 0;
+        }
+
+        .entry-preview {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .entry-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .tag {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .mood-indicator {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+        }
+
+        .mood-happy { background: var(--success-color); }
+        .mood-sad { background: var(--accent-color); }
+        .mood-neutral { background: var(--text-secondary); }
+        .mood-excited { background: var(--warning-color); }
+
+        .form-control {
+            border: 2px solid transparent;
+            border-radius: 15px;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 20px rgba(231, 76, 60, 0.2);
+            background: white;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar-stat {
+            text-align: center;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            color: white;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--warning-color);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .search-box input {
+            padding-left: 3rem;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .calendar-mini {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .calendar-header {
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.3rem;
+            text-align: center;
+        }
+
+        .calendar-day {
+            padding: 0.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-day:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .calendar-day.today {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .calendar-day.has-entry {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .floating-add-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--secondary-gradient);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .floating-add-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .modal-body {
+            color: white;
+        }
+
+        .close {
+            color: white;
+            opacity: 0.8;
+        }
+
+        .entry-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        .writing-stats {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .loading-spinner {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .quote-of-day {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: white;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .word-count {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .entry-mood {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .mood-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .mood-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .mood-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .mood-btn.selected {
+            border-color: white;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .diary-sidebar {
+                margin-bottom: 2rem;
+            }
+            
+            .floating-add-btn {
+                bottom: 1rem;
+                right: 1rem;
+            }
+        }
+
+        .theme-switcher {
+            position: fixed;
+            top: 50%;
+            right: 1rem;
+            transform: translateY(-50%);
+            z-index: 1000;
+        }
+
+        .theme-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .export-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .progress-tracker {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            background: var(--success-color);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="background-canvas"></canvas>
+    
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#home">
+                <i class="fas fa-book-open me-2"></i>My Diary
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="#home" onclick="showSection('home')">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#diary" onclick="showSection('diary')">My Diary</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#analytics" onclick="showSection('analytics')">Analytics</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#settings" onclick="showSection('settings')">Settings</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Home Section -->
+    <section id="home" class="hero-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <h1 class="hero-title">Welcome to Your Journey</h1>
+                    <p class="hero-subtitle">Capture your thoughts, memories, and dreams in this beautiful digital sanctuary</p>
+                    <button class="btn btn-custom" onclick="showSection('diary')">
+                        <i class="fas fa-pen-fancy me-2"></i>Start Writing
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Diary Section -->
+    <section id="diary" class="diary-container" style="display: none;">
+        <div class="container">
+            <div class="row">
+                <!-- Sidebar -->
+                <div class="col-lg-3">
+                    <div class="diary-sidebar">
+                        <!-- Statistics -->
+                        <div class="writing-stats">
+                            <h5 class="mb-3"><i class="fas fa-chart-line me-2"></i>Writing Stats</h5>
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-number" id="totalEntries">0</div>
+                                    <div class="stat-label">Entries</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number" id="totalWords">0</div>
+                                    <div class="stat-label">Words</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number" id="writingStreak">0</div>
+                                    <div class="stat-label">Day Streak</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number" id="avgMood">😊</div>
+                                    <div class="stat-label">Avg Mood</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quote of the Day -->
+                        <div class="quote-of-day">
+                            <h6><i class="fas fa-quote-left me-2"></i>Daily Inspiration</h6>
+                            <p id="dailyQuote">"The journey of a thousand miles begins with one step." - Lao Tzu</p>
+                        </div>
+
+                        <!-- Mini Calendar -->
+                        <div class="calendar-mini">
+                            <div class="calendar-header" id="calendarHeader">
+                                <button class="btn btn-sm btn-link text-white" onclick="previousMonth()">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <span id="currentMonth">December 2024</span>
+                                <button class="btn btn-sm btn-link text-white" onclick="nextMonth()">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                            <div class="calendar-grid" id="calendarGrid">
+                                <!-- Calendar days will be generated here -->
+                            </div>
+                        </div>
+
+                        <!-- Progress Tracker -->
+                        <div class="progress-tracker">
+                            <h6><i class="fas fa-target me-2"></i>Monthly Goal</h6>
+                            <p>Write 20 entries this month</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="monthlyProgress" style="width: 0%"></div>
+                            </div>
+                            <small id="progressText">0 / 20 entries</small>
+                        </div>
+
+                        <!-- Export Options -->
+                        <div class="export-section">
+                            <h6><i class="fas fa-download me-2"></i>Export</h6>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-sm btn-outline-light" onclick="exportToPDF()">
+                                    <i class="fas fa-file-pdf me-2"></i>PDF
+                                </button>
+                                <button class="btn btn-sm btn-outline-light" onclick="exportToJSON()">
+                                    <i class="fas fa-file-code me-2"></i>JSON
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div class="col-lg-9">
+                    <div class="diary-main">
+                        <!-- Search Box -->
+                        <div class="search-box">
+                            <div class="position-relative">
+                                <input type="text" class="form-control" id="searchInput" placeholder="Search your thoughts...">
+                                <i class="fas fa-search search-icon"></i>
+                            </div>
+                        </div>
+
+                        <!-- Filter Options -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <select class="form-select" id="moodFilter">
+                                    <option value="">All Moods</option>
+                                    <option value="happy">😊 Happy</option>
+                                    <option value="sad">😢 Sad</option>
+                                    <option value="excited">🤩 Excited</option>
+                                    <option value="neutral">😐 Neutral</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <select class="form-select" id="sortBy">
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                    <option value="mood">By Mood</option>
+                                    <option value="length">By Length</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Entries Container -->
+                        <div id="entriesContainer">
+                            <div class="text-center py-5">
+                                <i class="fas fa-book-open fa-3x mb-3" style="color: rgba(255,255,255,0.5);"></i>
+                                <h5 style="color: rgba(255,255,255,0.8);">No entries yet</h5>
+                                <p style="color: rgba(255,255,255,0.6);">Click the + button to start your first entry</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analytics Section -->
+    <section id="analytics" class="diary-container" style="display: none;">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="diary-main">
+                        <h2 class="mb-4" style="color: white;"><i class="fas fa-chart-bar me-3"></i>Writing Analytics</h2>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="glass-effect p-4">
+                                    <h5 style="color: white;"><i class="fas fa-calendar-alt me-2"></i>Writing Frequency</h5>
+                                    <canvas id="frequencyChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="glass-effect p-4">
+                                    <h5 style="color: white;"><i class="fas fa-smile me-2"></i>Mood Distribution</h5>
+                                    <canvas id="moodChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-4">
+                                <div class="glass-effect p-4">
+                                    <h5 style="color: white;"><i class="fas fa-pen me-2"></i>Words Per Entry</h5>
+                                    <canvas id="wordsChart" width="800" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Settings Section -->
+    <section id="settings" class="diary-container" style="display: none;">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="diary-main">
+                        <h2 class="mb-4" style="color: white;"><i class="fas fa-cog me-3"></i>Settings</h2>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="glass-effect p-4">
+                                    <h5 style="color: white;"><i class="fas fa-palette me-2"></i>Theme</h5>
+                                    <div class="theme-options">
+                                        <button class="theme-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" onclick="changeTheme('default')"></button>
+                                        <button class="theme-btn" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);" onclick="changeTheme('pink')"></button>
+                                        <button class="theme-btn" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);" onclick="changeTheme('mint')"></button>
+                                        <button class="theme-btn" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);" onclick="changeTheme('sunset')"></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="glass-effect p-4">
+                                    <h5 style="color: white;"><i class="fas fa-bell me-2"></i>Notifications</h5>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="dailyReminder" checked>
+                                        <label class="form-check-label text-white" for="dailyReminder">
+                                            Daily Writing Reminder
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="weeklyReport" checked>
+                                        <label class="form-check-label text-white" for="weeklyReport">
+                                            Weekly Progress Report
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <div class="glass-effect p-4">
+                                    <h5 style="color: white;"><i class="fas fa-database me-2"></i>Data Management</h5>
+                                    <div class="d-flex gap-3">
+                                        <button class="btn btn-warning" onclick="backupData()">
+                                            <i class="fas fa-download me-2"></i>Backup Data
+                                        </button>
+                                        <button class="btn btn-info" onclick="importData()">
+                                            <i class="fas fa-upload me-2"></i>Import Data
