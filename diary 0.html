@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luminary Diary | Your Digital Journal</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        diary: {
+                            primary: '#5e35b1',
+                            secondary: '#7e57c2',
+                            light: '#d1c4e9',
+                            dark: '#4527a0',
+                            paper: '#f5f2e9',
+                            ink: '#3e2723'
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['Playfair Display', 'serif'],
+                        body: ['Raleway', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root {
+            --page-width: 800px;
+            --page-height: 600px;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #e0d6ff 0%, #bbdefb 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-family: 'Raleway', sans-serif;
+            color: #333;
+        }
+        
+        .diary-container {
+            perspective: 2000px;
+            width: var(--page-width);
+            height: var(--page-height);
+            margin: 2rem auto;
+            position: relative;
+        }
+        
+        .diary-book {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 1.5s ease-in-out;
+        }
+        
+        .diary-cover {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #5e35b1 0%, #7e57c2 100%);
+            border-radius: 8px 16px 16px 8px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            backface-visibility: hidden;
+            transform-origin: left center;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        
+        .diary-cover::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect x="0" y="0" width="100" height="100" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/></svg>');
+            opacity: 0.3;
+        }
+        
+        .diary-page {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #f5f2e9;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            transform-origin: left center;
+            transition: transform 0.8s ease-in-out;
+            backface-visibility: hidden;
+            overflow: hidden;
+        }
+        
+        .page-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: repeating-linear-gradient(
+                #f5f2e9,
+                #f5f2e9 24px,
+                #d9d4c3 25px,
+                #d9d4c3 26px
+            );
+            border: 1px solid #d9d4c3;
+            border-radius: 4px;
+            position: relative;
+        }
+        
+        .page-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 40px;
+            width: 1px;
+            height: 100%;
+            background: rgba(200, 200, 200, 0.3);
+        }
+        
+        .page-number {
+            position: absolute;
+            bottom: 10px;
+            right: 20px;
+            color: #aaa;
+            font-size: 0.8rem;
+        }
+        
+        .flipped {
+            transform: rotateY(-180deg);
+        }
+        
+        .entry-list-item {
+            transition: all 0.3s ease;
+            border-left: 3px solid #7e57c2;
+        }
+        
+        .entry-list-item:hover {
+            background: #f0ebff;
+            transform: translateX(5px);
+        }
+        
+        .mood-selector .mood-option {
+            transition: all 0.3s ease;
+            opacity: 0.6;
+        }
+        
+        .mood-selector .mood-option.active, 
+        .mood-selector .mood-option:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        
+        .pen-stroke {
+            position: absolute;
+            height: 2px;
+            background: #3e2723;
+            transform-origin: 0 0;
+        }
+        
+        .floating-pen {
+            position: absolute;
+            z-index: 100;
+            transition: transform 0.5s ease;
+        }
+        
+        .weather-icon {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+        }
+        
+        .tag-pill {
+            background: #d1c4e9;
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 0.8rem;
+            margin-right: 5px;
+            display: inline-block;
+        }
+        
+        .threejs-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #7e57c2;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-diary-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <i class="fas fa-book-open me-2"></i>
+                <span class="fw-bold">Luminary Diary</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="fas fa-home me-1"></i> Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-history me-1"></i> Timeline</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-tags me-1"></i> Tags</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-cog me-1"></i> Settings</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold font-heading text-diary-dark">Your Personal Digital Diary</h1>
+            <p class="lead text-muted">Capture your thoughts, memories, and dreams in a beautiful interactive journal</p>
+        </div>
+        
+        <div class="row">
+            <!-- Left Panel: Diary Controls -->
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-diary-secondary text-white">
+                        <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>New Entry</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label text-diary-dark">Date</label>
+                            <input type="date" class="form-control" id="entry-date" value="">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-diary-dark">Title</label>
+                            <input type="text" class="form-control" id="entry-title" placeholder="What's on your mind?">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-diary-dark">Mood</label>
+                            <div class="d-flex justify-content-between mood-selector">
+                                <div class="mood-option text-center" data-mood="sad">
+                                    <i class="fas fa-frown fa-2x text-primary"></i>
+                                    <div>Sad</div>
+                                </div>
+                                <div class="mood-option text-center" data-mood="neutral">
+                                    <i class="fas fa-meh fa-2x text-secondary"></i>
+                                    <div>Neutral</div>
+                                </div>
+                                <div class="mood-option text-center active" data-mood="happy">
+                                    <i class="fas fa-smile fa-2x text-success"></i>
+                                    <div>Happy</div>
+                                </div>
+                                <div class="mood-option text-center" data-mood="excited">
+                                    <i class="fas fa-grin-stars fa-2x text-warning"></i>
+                                    <div>Excited</div>
+                                </div>
+                                <div class="mood-option text-center" data-mood="loved">
+                                    <i class="fas fa-heart fa-2x text-danger"></i>
+                                    <div>Loved</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-diary-dark">Weather</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button class="btn btn-outline-primary weather-option" data-weather="sunny">
+                                    <i class="fas fa-sun weather-icon"></i> Sunny
+                                </button>
+                                <button class="btn btn-outline-primary weather-option" data-weather="cloudy">
+                                    <i class="fas fa-cloud weather-icon"></i> Cloudy
+                                </button>
+                                <button class="btn btn-outline-primary weather-option" data-weather="rainy">
+                                    <i class="fas fa-cloud-rain weather-icon"></i> Rainy
+                                </button>
+                                <button class="btn btn-outline-primary weather-option" data-weather="stormy">
+                                    <i class="fas fa-bolt weather-icon"></i> Stormy
+                                </button>
+                                <button class="btn btn-outline-primary weather-option" data-weather="snowy">
+                                    <i class="fas fa-snowflake weather-icon"></i> Snowy
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-diary-dark">Tags</label>
+                            <input type="text" class="form-control" id="entry-tags" placeholder="Add tags (separate by commas)">
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button class="btn btn-diary-primary" id="create-entry">
+                                <i class="fas fa-feather-alt me-2"></i>Start Writing
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header bg-diary-secondary text-white">
+                        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Entries</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group" id="recent-entries">
+                            <a href="#" class="list-group-item list-group-item-action entry-list-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">A Beautiful Day in the Park</h6>
+                                    <small class="text-muted">Today</small>
+                                </div>
+                                <p class="mb-1">Spent the afternoon with friends at the park...</p>
+                                <small class="text-muted"><i class="fas fa-smile text-success me-1"></i> Happy • <i class="fas fa-sun text-warning me-1"></i> Sunny</small>
+                                <div class="mt-2">
+                                    <span class="tag-pill">friends</span>
+                                    <span class="tag-pill">outdoors</span>
+                                </div>
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action entry-list-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">New Project Ideas</h6>
+                                    <small class="text-muted">Yesterday</small>
+                                </div>
+                                <p class="mb-1">Brainstormed some exciting new concepts...</p>
+                                <small class="text-muted"><i class="fas fa-grin-stars text-warning me-1"></i> Excited • <i class="fas fa-cloud text-info me-1"></i> Cloudy</small>
+                                <div class="mt-2">
+                                    <span class="tag-pill">work</span>
+                                    <span class="tag-pill">ideas</span>
+                                </div>
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action entry-list-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Family Dinner</h6>
+                                    <small class="text-muted">2 days ago</small>
+                                </div>
+                                <p class="mb-1">Had a wonderful dinner with the whole family...</p>
+                                <small class="text-muted"><i class="fas fa-heart text-danger me-1"></i> Loved • <i class="fas fa-cloud-rain text-primary me-1"></i> Rainy</small>
+                                <div class="mt-2">
+                                    <span class="tag-pill">family</span>
+                                    <span class="tag-pill">food</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Panel: Diary Book -->
+            <div class="col-lg-8">
+                <div class="diary-container">
+                    <div class="diary-book" id="diary-book">
+                        <!-- Book Cover (Front) -->
+                        <div class="diary-cover" id="front-cover">
+                            <div class="text-center p-5">
+                                <h1 class="font-heading fw-bold mb-4" style="font-size: 3.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">Luminary Diary</h1>
+                                <p class="fs-5 mb-4" style="max-width: 80%; margin: 0 auto;">Your personal journey through life's moments</p>
+                                <div class="mt-5">
+                                    <button class="btn btn-light btn-lg px-5 py-3 rounded-pill fw-bold" id="open-diary">
+                                        Open Diary <i class="fas fa-arrow-right ms-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Book Cover (Back) - Hidden until book is open -->
+                        <div class="diary-cover" id="back-cover" style="transform: rotateY(180deg); background: linear-gradient(45deg, #4527a0 0%, #5e35b1 100%);">
+                            <div class="text-center p-5">
+                                <h2 class="font-heading mb-4">Your Story Continues...</h2>
+                                <p class="fs-5 mb-4">Close the diary to save your progress</p>
+                                <div class="mt-5">
+                                    <button class="btn btn-light btn-lg px-5 py-3 rounded-pill fw-bold" id="close-diary">
+                                        <i class="fas fa-times me-2"></i> Close Diary
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Diary Pages -->
+                        <div class="diary-page" id="page-1" style="transform: rotateY(-180deg);">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="font-heading text-diary-dark">Today's Entry</h4>
+                                <div class="text-diary-secondary">
+                                    <span id="entry-display-date">June 26, 2025</span>
+                                    <i class="fas fa-sun text-warning ms-2"></i>
+                                    <i class="fas fa-smile text-success ms-2"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="page-content" id="page-content-1">
+                                <h3 class="font-heading" id="entry-display-title">A Beautiful Day in the Park</h3>
+                                <p class="lead">Today was truly wonderful. I met up with some old friends at Riverside Park...</p>
+                                
+                                <p>The weather was absolutely perfect - sunny with a light breeze. We found a nice spot under a large oak tree and spread out our picnic blanket. Sarah brought her famous lemonade, and Mark grilled some veggie burgers. It felt so good to be outdoors after being cooped up all week.</p>
+                                
+                                <p>We talked for hours about everything and nothing. It's amazing how time flies when you're with good company. Emma shared stories about her recent trip to Italy, and we all laughed at Alex's terrible dad jokes. Moments like these remind me how important it is to nurture friendships.</p>
+                                
+                                <p>As the sun began to set, we packed up and made plans to do this again next month. I left feeling refreshed and grateful for these special people in my life.</p>
+                                
+                                <div class="mt-4">
+                                    <span class="tag-pill">friends</span>
+                                    <span class="tag-pill">outdoors</span>
+                                    <span class="tag-pill">picnic</span>
+                                    <span class="tag-pill">memories</span>
+                                </div>
+                            </div>
+                            
+                            <div class="page-number">1</div>
+                        </div>
+                        
+                        <div class="diary-page" id="page-2">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="font-heading text-diary-dark">Writing Area</h4>
+                                <div class="text-diary-secondary">
+                                    <span id="entry-current-date">June 26, 2025</span>
+                                    <i class="fas fa-feather-alt ms-2"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="page-content">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control border-0 bg-transparent p-0 fs-3 font-heading" placeholder="Entry Title" id="writing-title" value="A Beautiful Day in the Park">
+                                </div>
+                                
+                                <textarea class="form-control border-0 bg-transparent p-0" rows="15" placeholder="Begin your entry here..." id="writing-content" style="resize: none; min-height: 300px;">Today was truly wonderful. I met up with some old friends at Riverside Park...
+
+The weather was absolutely perfect - sunny with a light breeze. We found a nice spot under a large oak tree and spread out our picnic blanket. Sarah brought her famous lemonade, and Mark grilled some veggie burgers. It felt so good to be outdoors after being cooped up all week.
+
+We talked for hours about everything and nothing. It's amazing how time flies when you're with good company. Emma shared stories about her recent trip to Italy, and we all laughed at Alex's terrible dad jokes. Moments like these remind me how important it is to nurture friendships.
+
+As the sun began to set, we packed up and made plans to do this again next month. I left feeling refreshed and grateful for these special people in my life.</textarea>
+                                
+                                <div class="mt-4">
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2 text-diary-secondary">Tags:</span>
+                                        <input type="text" class="form-control form-control-sm d-inline-block w-auto" id="writing-tags" value="friends, outdoors, picnic, memories">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-3">
+                                <button class="btn btn-outline-diary-primary" id="prev-page">
+                                    <i class="fas fa-arrow-left me-2"></i> Previous
+                                </button>
+                                <button class="btn btn-diary-primary" id="save-entry">
+                                    <i class="fas fa-save me-2"></i> Save Entry
+                                </button>
+                            </div>
+                            
+                            <div class="page-number">2</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Floating Pen -->
+                    <div class="floating-pen" id="floating-pen">
+                        <i class="fas fa-pen-fancy fa-2x text-diary-dark"></i>
+                    </div>
+                    
+                    <!-- Three.js Container -->
+                    <div class="threejs-container" id="three-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="bg-diary-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <h5 class="font-heading mb-3">Luminary Diary</h5>
+                    <p class="mb-0">Capture your life's journey in a beautiful, interactive digital journal.</p>
+                </div>
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <h5 class="mb-3">Navigation</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white text-decoration-none">Home</a></li>
+                        <li><a href="#" class="text-white text-decoration-none">Features</a></li>
+                        <li><a href="#" class="text-white text-decoration-none">Pricing</a></li>
+                        <li><a href="#" class="text-white text-decoration-none">About</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5 class="mb-3">Connect</h5>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-white"><i class="fab fa-facebook fa-lg"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-twitter fa-lg"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-instagram fa-lg"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-github fa-lg"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4">
+            <p class="text-center mb-0">&copy; 2025 Luminary Diary. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Initialize the diary
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set current date as default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('entry-date').value = today;
+            
+            // Format date for display
+            const displayDate = new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            document.getElementById('entry-display-date').textContent = displayDate;
+            document.getElementById('entry-current-date').textContent = displayDate;
+            
+            // Diary book functionality
+            const diaryBook = document.getElementById('diary-book');
+            const frontCover = document.getElementById('front-cover');
+            const backCover = document.getElementById('back-cover');
+            const page1 = document.getElementById('page-1');
+            const page2 = document.getElementById('page-2');
+            const openBtn = document.getElementById('open-diary');
+            const closeBtn = document.getElementById('close-diary');
+            const prevBtn = document.getElementById('prev-page');
+            const saveBtn = document.getElementById('save-entry');
+            const floatingPen = document.getElementById('floating-pen');
+            
+            let isBookOpen = false;
+            let currentPage = 1;
+            
+            // Open the diary
+            openBtn.addEventListener('click', function() {
+                diaryBook.style.transform = 'rotateY(-180deg)';
+                isBookOpen = true;
+            });
+            
+            // Close the diary
+            closeBtn.addEventListener('click', function() {
+                diaryBook.style.transform = 'rotateY(0deg)';
+                isBookOpen = false;
+            });
+            
+            // Page navigation
+            prevBtn.addEventListener('click', function() {
+                if (currentPage === 2) {
+                    page2.classList.remove('flipped');
+                    currentPage = 1;
+                }
+            });
+            
+            // Save entry
+            saveBtn.addEventListener('click', function() {
+                if (currentPage === 1) {
+                    page1.classList.add('flipped');
+                    currentPage = 2;
+                }
+                
+                // Show success message
+                const toast = document.createElement('div');
+                toast.className = 'position-fixed bottom-0 end-0 p-3';
+                toast.style.zIndex = '11';
+                toast.innerHTML = `
+                    <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="toast-header bg-success text-white">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong class="me-auto">Success</strong>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body">
+                            Your diary entry has been saved successfully!
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                
+                // Remove toast after 3 seconds
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            });
+            
+            // Mood selection
+            const moodOptions = document.querySelectorAll('.mood-option');
+            moodOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    moodOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            
+            // Weather selection
+            const weatherOptions = document.querySelectorAll('.weather-option');
+            weatherOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    weatherOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            
+            // Create new entry
+            document.getElementById('create-entry').addEventListener('click', function() {
+                const title = document.getElementById('entry-title').value || 'Untitled Entry';
+                document.getElementById('writing-title').value = title;
+                document.getElementById('writing-content').value = '';
+                document.getElementById('writing-tags').value = '';
+                
+                if (!isBookOpen) {
+                    diaryBook.style.transform = 'rotateY(-180deg)';
+                    isBookOpen = true;
+                }
+                
+                // Reset to first page
+                page1.classList.remove('flipped');
+                currentPage = 1;
+                
+                // Set date
+                const selectedDate = document.getElementById('entry-date').value;
+                const formattedDate = new Date(selectedDate).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                document.getElementById('entry-display-date').textContent = formattedDate;
+                document.getElementById('entry-current-date').textContent = formattedDate;
+                
+                // Set mood and weather
+                const activeMood = document.querySelector('.mood-option.active').dataset.mood;
+                const activeWeather = document.querySelector('.weather-option.active')?.dataset.weather || 'sunny';
+                
+                // Simulate updating the display
+                console.log(`Creating new entry: ${title} on ${formattedDate} (Mood: ${activeMood}, Weather: ${activeWeather})`);
+            });
+            
+            // Animate floating pen
+            let penAngle = 0;
+            function animatePen() {
+                if (isBookOpen) {
+                    const radius = 100;
+                    const centerX = window.innerWidth / 2;
+                    const centerY = window.innerHeight / 2;
+                    
+                    penAngle += 0.01;
+                    const x = centerX + Math.cos(penAngle) * radius - 30;
+                    const y = centerY + Math.sin(penAngle) * radius - 30;
+                    
+                    floatingPen.style.transform = `translate(${x}px, ${y}px) rotate(${penAngle * 10}rad)`;
+                    floatingPen.style.opacity = '1';
+                } else {
+                    floatingPen.style.opacity = '0';
+                }
+                requestAnimationFrame(animatePen);
+            }
+            animatePen();
+            
+            // Initialize Three.js scene for decorative particles
+            const threeContainer = document.getElementById('three-container');
+            if (threeContainer) {
+                // Set up scene, camera, and renderer
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, threeContainer.clientWidth / threeContainer.clientHeight, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer({ alpha: true });
+                
+                renderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
+                threeContainer.appendChild(renderer.domElement);
+                
+                // Create decorative particles
+                const particles = [];
+                const particleCount = 100;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const geometry = new THREE.BufferGeometry();
+                    const vertices = new Float32Array([
+                        0, 0, 0,
+                        0.1, 0, 0,
+                        0.05, 0.1, 0
+                    ]);
+                    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+                    
+                    const material = new THREE.MeshBasicMaterial({ 
+                        color: new THREE.Color(`hsl(${Math.random() * 360}, 70%, 70%)`),
+                        transparent: true,
+                        opacity: 0.7
+                    });
+                    
+                    const particle = new THREE.Mesh(geometry, material);
+                    
+                    // Random position
+                    particle.position.x = Math.random() * 4 - 2;
+                    particle.position.y = Math.random() * 4 - 2;
+                    particle.position.z = Math.random() * 2 - 1;
+                    
+                    // Random rotation and scale
+                    particle.rotation.z = Math.random() * Math.PI;
+                    const scale = Math.random() * 0.3 + 0.1;
+                    particle.scale.set(scale, scale, scale);
+                    
+                    // Store velocity for animation
+                    particle.userData.velocity = new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.01,
+                        (Math.random() - 0.5) * 0.01,
+                        0
+                    );
+                    
+                    scene.add(particle);
+                    particles.push(particle);
+                }
+                
+                camera.position.z = 3;
+                
+                // Animation loop
+                function animateParticles() {
+                    requestAnimationFrame(animateParticles);
+                    
+                    particles.forEach(particle => {
+                        // Update position
+                        particle.position.add(particle.userData.velocity);
+                        
+                        // Bounce off imaginary walls
+                        if (Math.abs(particle.position.x) > 2) {
+                            particle.userData.velocity.x *= -1;
+                        }
+                        if (Math.abs(particle.position.y) > 2) {
+                            particle.userData.velocity.y *= -1;
+                        }
+                        
+                        // Rotate slowly
+                        particle.rotation.z += 0.005;
+                    });
+                    
+                    renderer.render(scene, camera);
+                }
+                
+                animateParticles();
+                
+                // Handle window resize
+                window.addEventListener('resize', function() {
+                    camera.aspect = threeContainer.clientWidth / threeContainer.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
+                });
+            }
+            
+            // Simulate pen strokes on the page
+            function createPenStroke() {
+                if (!isBookOpen) return;
+                
+                const pageContent = document.querySelector('.page-content');
+                const penStroke = document.createElement('div');
+                penStroke.className = 'pen-stroke';
+                
+                const startX = Math.random() * 50 + 20;
+                const startY = Math.random() * pageContent.clientHeight;
+                const length = Math.random() * 50 + 20;
+                const angle = Math.random() * Math.PI;
+                
+                penStroke.style.width = `${length}px`;
+                penStroke.style.left = `${startX}px`;
+                penStroke.style.top = `${startY}px`;
+                penStroke.style.transform = `rotate(${angle}rad)`;
+                
+                pageContent.appendChild(penStroke);
+                
+                // Remove after animation
+                setTimeout(() => {
+                    penStroke.remove();
+                }, 2000);
+            }
+            
+            // Periodically create pen strokes
+            setInterval(createPenStroke, 500);
+        });
+    </script>
+</body>
+</html>
