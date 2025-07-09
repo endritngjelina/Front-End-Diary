@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My 3D Digital Diary</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Crimson Text', serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+        
+        .starfield {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        .floating-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: float 6s infinite ease-in-out;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        .app-container {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 10px;
+            animation: fadeInDown 1s ease-out;
+        }
+        
+        .header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            font-style: italic;
+            animation: fadeInUp 1s ease-out 0.5s both;
+        }
+        
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            padding: 30px;
+            gap: 30px;
+            overflow: hidden;
+        }
+        
+        .sidebar {
+            width: 320px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            animation: slideInLeft 0.8s ease-out;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .sidebar h2 {
+            font-family: 'Playfair Display', serif;
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .mood-tracker {
+            margin-bottom: 25px;
+        }
+        
+        .mood-tracker h3 {
+            color: white;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .mood-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .mood-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: transparent;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .mood-btn:hover {
+            transform: scale(1.1);
+            border-color: white;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+        
+        .mood-btn.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: white;
+        }
+        
+        .calendar-mini {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .calendar-mini h3 {
+            color: white;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            text-align: center;
+        }
+        
+        .calendar-day {
+            color: rgba(255, 255, 255, 0.7);
+            padding: 8px 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+        
+        .calendar-day:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .calendar-day.today {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .calendar-day.has-entry {
+            background: rgba(100, 255, 100, 0.3);
+            color: white;
+        }
+        
+        .stats {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            flex: 1;
+        }
+        
+        .stats h3 {
+            color: white;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+        
+        .diary-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeIn 1s ease-out 0.8s both;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-family: 'Crimson Text', serif;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            color: white;
+            box-shadow: 0 8px 25px rgba(240, 147, 251, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(240, 147, 251, 0.4);
+        }
+        
+        .btn-accent {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
+        }
+        
+        .btn-accent:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(79, 172, 254, 0.4);
+        }
+        
+        .diary-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            animation: slideInRight 0.8s ease-out;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .diary-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c, #4facfe, #00f2fe);
+            background-size: 400% 100%;
+            animation: shimmer 3s linear infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 0%; }
+        }
+        
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .diary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .diary-date {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .entry-counter {
+            color: #666;
+            font-style: italic;
+            font-size: 0.95rem;
+        }
+        
+        .diary-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .entry-input {
+            flex: 1;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 20px;
+            font-family: 'Crimson Text', serif;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            resize: none;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .entry-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+            background: white;
+        }
+        
+        .entry-input::placeholder {
+            color: #999;
+            font-style: italic;
+        }
+        
+        .entry-display {
+            flex: 1;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            border: 2px solid #e0e0e0;
+            font-family: 'Crimson Text', serif;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #333;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+        }
+        
+        .entry-display:empty::before {
+            content: 'No entries yet. Start writing to see your thoughts appear here...';
+            color: #999;
+            font-style: italic;
+        }
+        
+        .entry-item {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .entry-item:hover {
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .entry-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .entry-item-date {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 0.95rem;
+        }
+        
+        .entry-item-mood {
+            font-size: 1.2rem;
+        }
+        
+        .entry-item-preview {
+            color: #555;
+            line-height: 1.5;
+        }
+        
+        .entry-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .entry-actions .btn {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+            position: relative;
+            animation: slideInUp 0.3s ease;
+        }
+        
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .modal-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: #333;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            padding: 5px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .close-btn:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 45px 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-family: 'Crimson Text', serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+        }
+        
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        
+        .no-results {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s infinite;
+        }
+        
+        @keyframes dots {
+            0%, 33% { content: '.'; }
+            34%, 66% { content: '..'; }
+            67%, 100% { content: '...'; }
+        }
+        
+        .three-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        .celebration {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            pointer-events: none;
+            opacity: 0;
+        }
+        
+        @keyframes celebrate {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        .celebration.active {
+            animation: celebrate 2s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .tooltip.show {
+            opacity: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+                padding: 20px;
+            }
+            
+            .sidebar {
+                width: 100%;
+                order: 2;
+            }
+            
+            .diary-area {
+                order: 1;
+            }
+            
+            .controls {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <!-- Starfield Background -->
+    <div class="starfield" id="starfield"></div>
+    
+    <!-- Floating Particles -->
+    <div class="floating-particles" id="particles"></div>
+    
+    <!-- Three.js Container -->
+    <div class="three-container" id="threeContainer"></div>
+    
+    <!-- Celebration Element -->
+    <div class="celebration" id="celebration">🎉 Entry Saved! 🎉</div>
+    
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip"></div>
+    
+    <div class="app-container">
+        <header class="header">
+            <h1>My Digital Diary</h1>
+            <p>Where thoughts become memories and memories become stories</p>
+        </header>
+        
+        <main class="main-content">
+            <aside class="sidebar">
+                <h2>Dashboard</h2>
+                
+                <div class="mood-tracker">
+                    <h3>Today's Mood</h3>
+                    <div class="mood-selector">
+                        <button class="mood-btn" data-mood="😊" title="Happy">😊</button>
+                        <button class="mood-btn" data-mood="😢" title="Sad">😢</button>
+                        <button class="mood-btn" data-mood="😍" title="Excited">😍</button>
+                        <button class="mood-btn" data-mood="😴" title="Tired">😴</button>
+                        <button class="mood-btn" data-mood="😤" title="Frustrated">😤</button>
+                        <button class="mood-btn" data-mood="🤔" title="Thoughtful">🤔</button>
+                        <button class="mood-btn" data-mood="😌" title="Peaceful">😌</button>
+                        <button class="mood-btn" data-mood="🔥" title="Energetic">🔥</button>
+                    </div>
+                </div>
+                
+                <div class="calendar-mini">
+                    <h3 id="calendarMonth">June 2025</h3>
+                    <div class="calendar-grid" id="calendarGrid">
+                        <!-- Calendar days will be generated by JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="stats">
+                    <h3>Statistics</h3>
+                    <div class="stat-item">
+                        <span>Total Entries:</span>
+                        <span id="totalEntries">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>This Month:</span>
+                        <span id="monthEntries">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Streak Days:</span>
+                        <span id="streakDays">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Avg Words:</span>
+                        <span id="avgWords">0</span>
+                    </div>
+                </div>
+            </aside>
+            
+            <div class="diary-area">
+                <div class="controls">
+                    <button class="btn btn-primary" id="newEntryBtn">✍️ New Entry</button>
+                    <button class="btn btn-secondary" id="viewEntriesBtn">📖 View Entries</button>
+                    <button class="btn btn-accent" id="searchBtn">🔍 Search</button>
+                    <button class="btn btn-primary" id="exportBtn">📤 Export</button>
+                    <button class="btn btn-secondary" id="settingsBtn">⚙️ Settings</button>
+                </div>
+                
+                <div class="diary-container">
+                    <div class="diary-header">
+                        <div class="diary-date" id="currentDate">Thursday, June 26, 2025</div>
+                        <div class="entry-counter" id="entryCounter">Entry #1</div>
+                    </div>
+                    
+                    <div class="diary-content" id="diaryContent">
+                        <textarea class="entry-input" id="entryInput" placeholder="Dear Diary,
+
+Today I feel... 
+
+What happened today that made me smile?
+
+What challenged me today?
+
+What am I grateful for?
+
+What are my thoughts and reflections?
+
+Write freely and let your thoughts flow..."></textarea>
+                        
+                        <div class="entry-actions">
+                            <button class="btn btn-primary" id="saveEntryBtn">💾 Save Entry</button>
+                            <button class="btn btn-secondary" id="clearEntryBtn">🗑️ Clear</button>
+                            <button class="btn btn-accent" id="voiceInputBtn">🎤 Voice Input</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modals -->
+    <div class="modal" id="viewEntriesModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">📖 My Diary Entries</h2>
+                <button class="close-btn" onclick="closeModal('viewEntriesModal')">&times;</button>
+            </div>
+            <div class="search-container">
+                <input type="text" class="search-input" id="entriesSearch" placeholder="Search entries...">
+                <span class="search-icon">🔍</span>
+            </div>
+            <div class="entry-display" id="entriesDisplay">
+                <!-- Entries will be displayed here -->
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="searchModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🔍 Search Diary</h2>
+                <button class="close-btn" onclick="closeModal('searchModal')">&times;</button>
+            </div>
+            <div class="search-container">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search for keywords, dates, or moods...">
+                <span class="search-icon">🔍</span>
+            </div>
+            <div class="entry-display" id="searchResults">
+                <div class="no-results">Enter keywords to search your diary entries</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">⚙️ Settings</h2>
+                <button class="close-btn" onclick="closeModal('settingsModal')">&times;</button>
+            </div>
+            <div style="padding: 20px;">
+                <h3>Appearance</h3>
+                <div style="margin: 15px 0;">
+                    <label><input type="checkbox" id="darkModeToggle"> Dark Mode</label>
+                </div>
+                <div style="margin: 15px 0;">
+                    <label><input type="checkbox" id="animationsToggle" checked> Enable Animations</label>
+                </div>
+                
+                <h3>Privacy</h3>
+                <div style="margin: 15px 0;">
+                    <label><input type="checkbox" id="autoSaveToggle" checked> Auto-save entries</label>
+                </div>
+                
+                <h3>Notifications</h3>
+                <div style="margin: 15px 0;">
+                    <label><input type="checkbox" id="reminderToggle"> Daily writing reminder</label>
+                </div>
+                
+                <div style="margin-top: 30px;">
+                    <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                    <button class="btn btn-secondary" onclick="resetSettings()">Reset to Default</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let entries = JSON.parse(localStorage.getItem('diaryEntries')) || [];
+        let currentMood = '';
+        let scene, camera, renderer, particles = [];
+        let currentEntryIndex = 0;
+        let isRecording = false;
+        let recognition;
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+        
+        function initializeApp() {
+            createStarfield();
+            createFloatingParticles();
+            initThreeJS();
+            setupEventListeners();
+            updateCalendar();
+            updateStats();
+            updateEntryCounter();
+            setupTooltips();
+            loadSettings();
+            
+            // Auto-save every 30 seconds if auto-save is enabled
+            setInterval(() => {
+                if (document.getElementById('autoSaveToggle').checked) {
+                    autoSaveEntry();
+                }
+            }, 30000);
+        }
+        
+        function createStarfield() {
+            const starfield = document.getElementById('starfield');
+            const numStars = 100;
+            
+            for (let i = 0; i < numStars; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = Math.random() * 3 + 1 + 'px';
+                star.style.height = star.style.width;
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starfield.appendChild(star);
+            }
+        }
+        
+        function createFloatingParticles() {
+            const particleContainer = document.getElementById('particles');
+            const numParticles = 20;
+            
+            for (let i = 0; i < numParticles; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+                particleContainer.appendChild(particle);
+            }
+        }
+        
+        function initThreeJS() {
+            const container = document.getElementById('threeContainer');
+            
+            // Scene setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+            
+            // Create floating geometric shapes
+            const geometries = [
+                new THREE.BoxGeometry(0.5, 0.5, 0.5),
+                new THREE.SphereGeometry(0.3, 16, 16),
+                new THREE.ConeGeometry(0.3, 0.6, 8),
+                new THREE.TetrahedronGeometry(0.4, 0)
+            ];
+            
+            const materials = [
+                new THREE.MeshBasicMaterial({ color: 0x667eea, transparent: true, opacity: 0.6 }),
+                new THREE.MeshBasicMaterial({ color: 0x764ba2, transparent: true, opacity: 0.6 }),
+                new THREE.MeshBasicMaterial({ color: 0xf093fb, transparent: true, opacity: 0.6 }),
+                new THREE.MeshBasicMaterial({ color: 0x4facfe, transparent: true, opacity: 0.6 })
+            ];
+            
+            // Create particles
+            for (let i = 0; i < 15; i++) {
+                const geometry = geometries[Math.floor(Math.random() * geometries.length)];
+                const material = materials[Math.floor(Math.random() * materials.length)];
+                const mesh = new THREE.Mesh(geometry, material);
+                
+                mesh.position.x = (Math.random() - 0.5) * 20;
+                mesh.position.y = (Math.random() - 0.5) * 20;
+                mesh.position.z = (Math.random() - 0.5) * 20;
+                
+                mesh.rotation.x = Math.random() * Math.PI;
+                mesh.rotation.y = Math.random() * Math.PI;
+                mesh.rotation.z = Math.random() * Math.PI;
+                
+                scene.add(mesh);
+                particles.push(mesh);
+            }
+            
+            camera.position.z = 5;
+            
+            // Start animation loop
+            animate();
+            
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize, false);
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Rotate particles
+            particles.forEach((particle, index) => {
+                particle.rotation.x += 0.005 + index * 0.001;
+                particle.rotation.y += 0.005 + index * 0.001;
+                particle.position.y += Math.sin(Date.now() * 0.001 + index) * 0.002;
+                particle.position.x += Math.cos(Date.now() * 0.001 + index) * 0.002;
+            });
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        function setupEventListeners() {
+            // Mood selection
+            document.querySelectorAll('.mood-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentMood = this.dataset.mood;
+                });
+            });
+            
+            // Main buttons
+            document.getElementById('newEntryBtn').addEventListener('click', newEntry);
+            document.getElementById('viewEntriesBtn').addEventListener('click', () => openModal('viewEntriesModal'));
+            document.getElementById('searchBtn').addEventListener('click', () => openModal('searchModal'));
+            document.getElementById('exportBtn').addEventListener('click', exportEntries);
+            document.getElementById('settingsBtn').addEventListener('click', () => openModal('settingsModal'));
+            
+            // Entry actions
+            document.getElementById('saveEntryBtn').addEventListener('click', saveEntry);
+            document.getElementById('clearEntryBtn').addEventListener('click', clearEntry);
+            document.getElementById('voiceInputBtn').addEventListener('click', toggleVoiceInput);
+            
+            // Search functionality
+            document.getElementById('entriesSearch').addEventListener('input', filterEntries);
+            document.getElementById('searchInput').addEventListener('input', searchEntries);
+            
+            // Calendar clicks
+            document.getElementById('calendarGrid').addEventListener('click', handleCalendarClick);
+            
+            // Auto-resize textarea
+            document.getElementById('entryInput').addEventListener('input', autoResizeTextarea);
+            
+            // Close modals on outside click
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeModal(this.id);
+                    }
+                });
+            });
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', handleKeyboardShortcuts);
+        }
+        
+        function setupTooltips() {
+            const tooltip = document.getElementById('tooltip');
+            
+            document.querySelectorAll('[title]').forEach(element => {
+                element.addEventListener('mouseenter', function(e) {
+                    tooltip.textContent = this.getAttribute('title');
+                    tooltip.style.left = e.pageX + 10 + 'px';
+                    tooltip.style.top = e.pageY + 10 + 'px';
+                    tooltip.classList.add('show');
+                });
+                
+                element.addEventListener('mouseleave', function() {
+                    tooltip.classList.remove('show');
+                });
+                
+                element.addEventListener('mousemove', function(e) {
+                    tooltip.style.left = e.pageX + 10 + 'px';
+                    tooltip.style.top = e.pageY + 10 + 'px';
+                });
+            });
+        }
+        
+        function newEntry() {
+            document.getElementById('entryInput').value = '';
+            document.getElementById('entryInput').focus();
+            currentEntryIndex = entries.length;
+            updateEntryCounter();
+        }
+        
+        function saveEntry() {
+            const entryText = document.getElementById('entryInput').value.trim();
+            
+            if (!entryText) {
+                alert('Please write something before saving!');
+                return;
+            }
+            
+            const entry = {
+                id: Date.now(),
+                date: new Date().toISOString(),
+                content: entryText,
+                mood: currentMood || '😊',
+                wordCount: entryText.split(/\s+/).length,
+                dateString: new Date().toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                })
+            };
+            
+            entries.unshift(entry);
+            localStorage.setItem('diaryEntries', JSON.stringify(entries));
+            
+            // Show celebration
+            showCelebration();
+            
+            // Update UI
+            updateStats();
+            updateCalendar();
+            newEntry();
+            
+            // Reset mood selection
+            document.querySelectorAll('.mood-btn').forEach(btn => btn.classList.remove('active'));
+            currentMood = '';
+        }
+        
+        function autoSaveEntry() {
+            const entryText = document.getElementById('entryInput').value.trim();
+            if (entryText && entryText.length > 50) {
+                // Only auto-save if there's substantial content
+                const existingDraft = localStorage.getItem('diaryDraft');
+                if (existingDraft !== entryText) {
+                    localStorage.setItem('diaryDraft', entryText);
+                    showNotification('Draft saved automatically', 'success');
+                }
+            }
+        }
+        
+        function clearEntry() {
+            if (confirm('Are you sure you want to clear this entry?')) {
+                document.getElementById('entryInput').value = '';
+                localStorage.removeItem('diaryDraft');
+            }
+        }
+        
+        function toggleVoiceInput() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert('Speech recognition is not supported in your browser.');
+                return;
+            }
+            
+            const voiceBtn = document.getElementById('voiceInputBtn');
+            
+            if (isRecording) {
+                recognition.stop();
+                isRecording = false;
+                voiceBtn.textContent = '🎤 Voice Input';
+                voiceBtn.classList.remove('btn-accent');
+                voiceBtn.classList.add('btn-primary');
+            } else {
+                startVoiceRecognition();
+            }
+        }
+        
+        function startVoiceRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+            
+            const voiceBtn = document.getElementById('voiceInputBtn');
+            const entryInput = document.getElementById('entryInput');
+            
+            recognition.onstart = function() {
+                isRecording = true;
+                voiceBtn.textContent = '🔴 Recording...';
+                voiceBtn.classList.remove('btn-primary');
+                voiceBtn.classList.add('btn-accent');
+            };
+            
+            recognition.onresult = function(event) {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                
+                if (entryInput.value) {
+                    entryInput.value += ' ' + transcript;
+                } else {
+                    entryInput.value = transcript;
+                }
+                
+                autoResizeTextarea();
+            };
+            
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+                isRecording = false;
+                voiceBtn.textContent = '🎤 Voice Input';
+                voiceBtn.classList.remove('btn-accent');
+                voiceBtn.classList.add('btn-primary');
+            };
+            
+            recognition.onend = function() {
+                isRecording = false;
+                voiceBtn.textContent = '🎤 Voice Input';
+                voiceBtn.classList.remove('btn-accent');
+                voiceBtn.classList.add('btn-primary');
+            };
+            
+            recognition.start();
+        }
+        
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('active');
+            
+            if (modalId === 'viewEntriesModal') {
+                displayEntries();
+            }
+        }
+        
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('active');
+        }
+        
+        function displayEntries() {
+            const display = document.getElementById('entriesDisplay');
+            
+            if (entries.length === 0) {
+                display.innerHTML = '<div class="no-results">No entries found. Start writing your first entry!</div>';
+                return;
+            }
+            
+            display.innerHTML = entries.map(entry => `
+                <div class="entry-item" onclick="viewFullEntry('${entry.id}')">
+                    <div class="entry-item-header">
+                        <div class="entry-item-date">${entry.dateString}</div>
+                        <div class="entry-item-mood">${entry.mood}</div>
+                    </div>
+                    <div class="entry-item-preview">
+                        ${entry.content.substring(0, 200)}${entry.content.length > 200 ? '...' : ''}
+                    </div>
+                    <div class="entry-actions">
+                        <button class="btn btn-primary" onclick="event.stopPropagation(); editEntry('${entry.id}')">✏️ Edit</button>
+                        <button class="btn btn-secondary" onclick="event.stopPropagation(); deleteEntry('${entry.id}')">🗑️ Delete</button>
+                        <button class="btn btn-accent" onclick="event.stopPropagation(); shareEntry('${entry.id}')">📤 Share</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function filterEntries() {
+            const searchTerm = document.getElementById('entriesSearch').value.toLowerCase();
+            const filteredEntries = entries.filter(entry => 
+                entry.content.toLowerCase().includes(searchTerm) ||
+                entry.dateString.toLowerCase().includes(searchTerm)
+            );
+            
+            const display = document.getElementById('entriesDisplay');
+            
+            if (filteredEntries.length === 0) {
+                display.innerHTML = '<div class="no-results">No entries match your search.</div>';
+                return;
+            }
+            
+            display.innerHTML = filteredEntries.map(entry => `
+                <div class="entry-item" onclick="viewFullEntry('${entry.id}')">
+                    <div class="entry-item-header">
+                        <div class="entry-item-date">${entry.dateString}</div>
+                        <div class="entry-item-mood">${entry.mood}</div>
+                    </div>
+                    <div class="entry-item-preview">
+                        ${highlightSearchTerm(entry.content.substring(0, 200), searchTerm)}${entry.content.length > 200 ? '...' : ''}
+                    </div>
+                    <div class="entry-actions">
+                        <button class="btn btn-primary" onclick="event.stopPropagation(); editEntry('${entry.id}')">✏️ Edit</button>
+                        <button class="btn btn-secondary" onclick="event.stopPropagation(); deleteEntry('${entry.id}')">🗑️ Delete</button>
+                        <button class="btn btn-accent" onclick="event.stopPropagation(); shareEntry('${entry.id}')">📤 Share</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function highlightSearchTerm(text, term) {
+            if (!term) return text;
+            const regex = new RegExp(`(${term})`, 'gi');
+            return text.replace(regex, '<mark style="background: #ffeb3b; padding: 2px;">$1</mark>');
+        }
+        
+        function searchEntries() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const resultsDisplay = document.getElementById('searchResults');
+            
+            if (!searchTerm) {
+                resultsDisplay.innerHTML = '<div class="no-results">Enter keywords to search your diary entries</div>';
+                return;
+            }
+            
+            const searchResults = entries.filter(entry => 
+                entry.content.toLowerCase().includes(searchTerm) ||
+                entry.dateString.toLowerCase().includes(searchTerm) ||
+                entry.mood.includes(searchTerm)
+            );
+            
+            if (searchResults.length === 0) {
+                resultsDisplay.innerHTML = '<div class="no-results">No entries found matching your search.</div>';
+                return;
+            }
+            
+            resultsDisplay.innerHTML = searchResults.map(entry => `
+                <div class="entry-item" onclick="viewFullEntry('${entry.id}')">
+                    <div class="entry-item-header">
+                        <div class="entry-item-date">${entry.dateString}</div>
+                        <div class="entry-item-mood">${entry.mood}</div>
+                    </div>
+                    <div class="entry-item-preview">
+                        ${highlightSearchTerm(entry.content.substring(0, 200), searchTerm)}${entry.content.length > 200 ? '...' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function viewFullEntry(entryId) {
+            const entry = entries.find(e => e.id === parseInt(entryId));
+            if (!entry) return;
+            
+            alert(`${entry.dateString} ${entry.mood}\n\n${entry.content}`);
+        }
+        
+        function editEntry(entryId) {
+            const entry = entries.find(e => e.id === parseInt(entryId));
+            if (!entry) return;
+            
+            document.getElementById('entryInput').value = entry.content;
+            
+            // Remove the entry from array (will be re-added when saved)
+            entries = entries.filter(e => e.id !== parseInt(entryId));
+            localStorage.setItem('diaryEntries', JSON.stringify(entries));
+            
+            closeModal('viewEntriesModal');
+            updateStats();
+        }
+        
+        function deleteEntry(entryId) {
+            if (confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
+                entries = entries.filter(e => e.id !== parseInt(entryId));
+                localStorage.setItem('diaryEntries', JSON.stringify(entries));
+                displayEntries();
+                updateStats();
+                updateCalendar();
+            }
+        }
+        
+        function shareEntry(entryId) {
+            const entry = entries.find(e => e.id === parseInt(entryId));
+            if (!entry) return;
+            
+            const shareText = `${entry.dateString}\n\n${entry.content}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My Diary Entry',
+                    text: shareText
+                });
+            } else {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert('Entry copied to clipboard!');
+                });
+            }
+        }
+        
+        function exportEntries() {
+            if (entries.length === 0) {
+                alert('No entries to export!');
+                return;
+            }
+            
+            const exportData = entries.map(entry => 
+                `${entry.dateString} ${entry.mood}\n${'='.repeat(50)}\n${entry.content}\n\n`
+            ).join('');
+            
+            const blob = new Blob([exportData], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `diary_entries_${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            showNotification('Diary exported successfully!', 'success');
+        }
+        
+        function updateCalendar() {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            const today = now.getDate();
+            
+            document.getElementById('calendarMonth').textContent = 
+                now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            
+            const calendarGrid = document.getElementById('calendarGrid');
+            calendarGrid.innerHTML = '';
+            
+            // Day headers
+            const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayHeaders.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.textContent = day;
+                dayHeader.style.fontWeight = 'bold';
+                dayHeader.style.color = 'rgba(255, 255, 255, 0.9)';
+                dayHeader.className = 'calendar-day';
+                calendarGrid.appendChild(dayHeader);
+            });
+            
+            // Empty cells for days before month starts
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day';
+                calendarGrid.appendChild(emptyDay);
+            }
+            
+            // Days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                dayElement.textContent = day;
+                dayElement.dataset.day = day;
+                
+                if (day === today) {
+                    dayElement.classList.add('today');
+                }
+                
+                // Check if there's an entry for this day
+                const dayDate = new Date(currentYear, currentMonth, day);
+                const hasEntry = entries.some(entry => {
+                    const entryDate = new Date(entry.date);
+                    return entryDate.toDateString() === dayDate.toDateString();
+                });
+                
+                if (hasEntry) {
+                    dayElement.classList.add('has-entry');
+                }
+                
+                calendarGrid.appendChild(dayElement);
+            }
+        }
+        
+        function handleCalendarClick(e) {
+            if (e.target.classList.contains('calendar-day') && e.target.dataset.day) {
+                const day = parseInt(e.target.dataset.day);
+                const now = new Date();
+                const clickedDate = new Date(now.getFullYear(), now.getMonth(), day);
+                
+                const dayEntries = entries.filter(entry => {
+                    const entryDate = new Date(entry.date);
+                    return entryDate.toDateString() === clickedDate.toDateString();
+                });
+                
+                if (dayEntries.length > 0) {
+                    const entryTexts = dayEntries.map(entry => 
+                        `${entry.mood} ${entry.content.substring(0, 100)}...`
+                    ).join('\n\n');
+                    alert(`Entries for ${clickedDate.toDateString()}:\n\n${entryTexts}`);
+                } else {
+                    alert(`No entries found for ${clickedDate.toDateString()}`);
+                }
+            }
+        }
+        
+        function updateStats() {
+            const totalEntries = entries.length;
+            const thisMonth = entries.filter(entry => {
+                const entryDate = new Date(entry.date);
+                const now = new Date();
+                return entryDate.getMonth() === now.getMonth() && 
+                       entryDate.getFullYear() === now.getFullYear();
+            }).length;
+            
+            const totalWords = entries.reduce((sum, entry) => sum + entry.wordCount, 0);
+            const avgWords = totalEntries > 0 ? Math.round(totalWords / totalEntries) : 0;
+            
+            // Calculate streak
+            const streak = calculateStreak();
+            
+            document.getElementById('totalEntries').textContent = totalEntries;
+            document.getElementById('monthEntries').textContent = thisMonth;
+            document.getElementById('streakDays').textContent = streak;
+            document.getElementById('avgWords').textContent = avgWords;
+        }
+        
+        function calculateStreak() {
+            if (entries.length === 0) return 0;
+            
+            const sortedEntries = entries.sort((a, b) => new Date(b.date) - new Date(a.date));
+            let streak = 0;
+            let currentDate = new Date();
+            
+            for (let entry of sortedEntries) {
+                const entryDate = new Date(entry.date);
+                const daysDiff = Math.floor((currentDate - entryDate) / (1000 * 60 * 60 * 24));
+                
+                if (daysDiff === streak) {
+                    streak++;
+                } else if (daysDiff > streak) {
+                    break;
+                }
+            }
+            
+            return Math.max(0, streak);
+        }
+        
+        function updateEntryCounter() {
+            document.getElementById('entryCounter').textContent = `Entry #${entries.length + 1}`;
+        }
+        
+        function showCelebration() {
+            const celebration = document.getElementById('celebration');
+            celebration.classList.add('active');
+            
+            setTimeout(() => {
+                celebration.classList.remove('active');
+            }, 2000);
+        }
+        
+        function showNotification(message, type = 'info') {
+            // Create a simple notification system
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#4CAF50' : '#2196F3'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                z-index: 1001;
+                animation: slideInRight 0.3s ease;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+        
+        function autoResizeTextarea() {
+            const textarea = document.getElementById('entryInput');
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+        
+        function handleKeyboardShortcuts(e) {
+            if (e.ctrlKey) {
+                switch(e.key) {
+                    case 's':
+                        e.preventDefault();
+                        saveEntry();
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        newEntry();
+                        break;
+                    case 'f':
+                        e.preventDefault();
+                        openModal('searchModal');
+                        break;
+                    case 'e':
+                        e.preventDefault();
+                        exportEntries();
+                        break;
+                }
+            }
+        }
+        
+        function saveSettings() {
+            const settings = {
+                darkMode: document.getElementById('darkModeToggle').checked,
+                animations: document.getElementById('animationsToggle').checked,
+                autoSave: document.getElementById('autoSaveToggle').checked,
+                reminder: document.getElementById('reminderToggle').checked
+            };
+            
+            localStorage.setItem('diarySettings', JSON.stringify(settings));
+            applySettings(settings);
+            showNotification('Settings saved!', 'success');
+        }
+        
+        function loadSettings() {
+            const settings = JSON.parse(localStorage.getItem('diarySettings') || '{}');
+            
+            document.getElementById('darkModeToggle').checked = settings.darkMode || false;
+            document.getElementById('animationsToggle').checked = settings.animations !== false;
+            document.getElementById('autoSaveToggle').checked = settings.autoSave !== false;
+            document.getElementById('reminderToggle').checked = settings.reminder || false;
+            
+            applySettings(settings);
+        }
+        
+        function applySettings(settings) {
+            if (settings.darkMode) {
+                document.body.style.filter = 'invert(1) hue-rotate(180deg)';
+            } else {
+                document.body.style.filter = 'none';
+            }
+            
+            if (!settings.animations) {
+                document.body.style.setProperty('--animation-duration', '0s');
+            } else {
+                document.body.style.removeProperty('--animation-duration');
+            }
+        }
+        
+        function resetSettings() {
+            localStorage.removeItem('diarySettings');
+            document.getElementById('darkModeToggle').checked = false;
+            document.getElementById('animationsToggle').checked = true;
+            document.getElementById('autoSaveToggle').checked = true;
+            document.getElementById('reminderToggle').checked = false;
+            
+            applySettings({});
+            showNotification('Settings reset to default!', 'success');
+        }
+        
+        // Load draft on page load
+        window.addEventListener('load', function() {
+            const draft = localStorage.getItem('diaryDraft');
+            if (draft) {
+                document.getElementById('entryInput').value = draft;
+                autoResizeTextarea();
+            }
+        });
+        
+        // Add CSS animations for notifications
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
