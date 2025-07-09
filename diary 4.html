@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ethereal Diary - Your Digital Sanctuary</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            50% { transform: translateY(-100px) rotate(180deg); }
+        }
+
+        .diary-container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .diary-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .diary-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #fff, #e0e7ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .diary-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.2rem;
+            font-weight: 300;
+        }
+
+        .main-interface {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .sidebar-card {
+            padding: 1.5rem;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        .entry-editor {
+            padding: 2rem;
+            border-radius: 20px;
+            min-height: 600px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .date-display {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: white;
+            font-weight: 500;
+        }
+
+        .editor-controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .control-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .entry-textarea {
+            width: 100%;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 1.5rem;
+            color: white;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .entry-textarea:focus {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .entry-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+            font-style: italic;
+        }
+
+        .mood-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .mood-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .mood-btn:hover, .mood-btn.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        .entries-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .entries-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .entries-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .entries-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        .entry-item {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .entry-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+            border-left-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .entry-date {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 0.5rem;
+        }
+
+        .entry-preview {
+            color: white;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .entry-mood {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: scale(1.05);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 600;
+            color: white;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 0.5rem;
+        }
+
+        .three-scene {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.4;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            margin-bottom: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .search-box::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .word-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .word-tag {
+            padding: 0.3rem 0.8rem;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .word-tag:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.1);
+        }
+
+        .export-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .calendar-view {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .calendar-day:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .calendar-day.has-entry {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            font-weight: 600;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        @media (max-width: 1024px) {
+            .main-interface {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .diary-title {
+                font-size: 2.5rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .diary-container {
+                padding: 1rem;
+            }
+            
+            .diary-title {
+                font-size: 2rem;
+            }
+            
+            .entry-editor {
+                padding: 1rem;
+            }
+            
+            .entry-textarea {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Particles -->
+    <div class="floating-particles" id="particles"></div>
+    
+    <!-- Three.js Scene -->
+    <div class="three-scene" id="three-scene"></div>
+
+    <!-- Main Diary Container -->
+    <div class="diary-container">
+        <!-- Header -->
+        <div class="diary-header">
+            <h1 class="diary-title">Ethereal Diary</h1>
+            <p class="diary-subtitle">Your thoughts, beautifully preserved in digital eternity</p>
+        </div>
+
+        <!-- Main Interface -->
+        <div class="main-interface">
+            <!-- Left Sidebar -->
+            <div class="sidebar">
+                <!-- Statistics Card -->
+                <div class="sidebar-card glass-morphism">
+                    <h3 class="card-title">Your Journey</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-number" id="total-entries">0</span>
+                            <span class="stat-label">Entries</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="words-written">0</span>
+                            <span class="stat-label">Words</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="days-active">0</span>
+                            <span class="stat-label">Days</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="streak-count">0</span>
+                            <span class="stat-label">Streak</span>
+                        </div>
+                    </div>
+                    <button class="export-btn" onclick="exportDiary()">Export Diary</button>
+                </div>
+
+                <!-- Calendar Card -->
+                <div class="sidebar-card glass-morphism">
+                    <h3 class="card-title">Calendar</h3>
+                    <div class="calendar-view" id="calendar"></div>
+                </div>
+            </div>
+
+            <!-- Main Editor -->
+            <div class="entry-editor glass-morphism">
+                <div class="editor-header">
+                    <div class="date-display" id="current-date"></div>
+                    <div class="editor-controls">
+                        <button class="control-btn" onclick="saveEntry()">Save</button>
+                        <button class="control-btn" onclick="newEntry()">New</button>
+                        <button class="control-btn" onclick="deleteEntry()">Delete</button>
+                    </div>
+                </div>
+
+                <div class="mood-selector">
+                    <button class="mood-btn" data-mood="😊" onclick="selectMood(this)">😊 Happy</button>
+                    <button class="mood-btn" data-mood="😔" onclick="selectMood(this)">😔 Sad</button>
+                    <button class="mood-btn" data-mood="😌" onclick="selectMood(this)">😌 Peaceful</button>
+                    <button class="mood-btn" data-mood="😤" onclick="selectMood(this)">😤 Frustrated</button>
+                    <button class="mood-btn" data-mood="🤔" onclick="selectMood(this)">🤔 Thoughtful</button>
+                    <button class="mood-btn" data-mood="🥳" onclick="selectMood(this)">🥳 Excited</button>
+                </div>
+
+                <textarea 
+                    class="entry-textarea" 
+                    id="entry-text" 
+                    placeholder="Pour your heart out... What's on your mind today? Let your thoughts flow freely in this sacred space of yours."
+                    oninput="updateWordCount()"
+                ></textarea>
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="sidebar">
+                <!-- Search & Entries -->
+                <div class="sidebar-card glass-morphism">
+                    <h3 class="card-title">Past Entries</h3>
+                    <input type="text" class="search-box" placeholder="Search your memories..." oninput="searchEntries(this.value)">
+                    <div class="entries-list" id="entries-list"></div>
+                </div>
+
+                <!-- Word Cloud -->
+                <div class="sidebar-card glass-morphism">
+                    <h3 class="card-title">Frequent Words</h3>
+                    <div class="word-cloud" id="word-cloud"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Global variables
+        let entries = JSON.parse(localStorage.getItem('diaryEntries') || '[]');
+        let currentEntry = null;
+        let selectedMood = null;
+        let scene, camera, renderer, particles = [];
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initThreeJS();
+            initParticles();
+            updateCurrentDate();
+            loadEntries();
+            updateStatistics();
+            generateCalendar();
+            generateWordCloud();
+            
+            // Auto-save every 30 seconds
+            setInterval(autoSave, 30000);
+        });
+
+        // Three.js initialization
+        function initThreeJS() {
+            const container = document.getElementById('three-scene');
+            
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            // Create floating geometric shapes
+            const geometries = [
+                new THREE.SphereGeometry(0.5, 32, 32),
+                new THREE.BoxGeometry(0.8, 0.8, 0.8),
+                new THREE.OctahedronGeometry(0.6),
+                new THREE.TetrahedronGeometry(0.7)
+            ];
+
+            const material = new THREE.MeshBasicMaterial({ 
+                color: 0xffffff, 
+                wireframe: true, 
+                transparent: true, 
+                opacity: 0.1 
+            });
+
+            for (let i = 0; i < 20; i++) {
+                const geometry = geometries[Math.floor(Math.random() * geometries.length)];
+                const mesh = new THREE.Mesh(geometry, material);
+                
+                mesh.position.x = (Math.random() - 0.5) * 20;
+                mesh.position.y = (Math.random() - 0.5) * 20;
+                mesh.position.z = (Math.random() - 0.5) * 20;
+                
+                mesh.rotation.x = Math.random() * Math.PI;
+                mesh.rotation.y = Math.random() * Math.PI;
+                
+                scene.add(mesh);
+                particles.push(mesh);
+            }
+
+            camera.position.z = 10;
+            animate();
+        }
+
+        // Three.js animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            particles.forEach((particle, index) => {
+                particle.rotation.x += 0.01;
+                particle.rotation.y += 0.01;
+                particle.position.y += Math.sin(Date.now() * 0.001 + index) * 0.002;
+            });
+            
+            renderer.render(scene, camera);
+        }
+
+        // Initialize floating particles
+        function initParticles() {
+            const container = document.getElementById('particles');
+            
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // Update current date display
+        function updateCurrentDate() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        // Mood selection
+        function selectMood(button) {
+            document.querySelectorAll('.mood-btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            selectedMood = button.dataset.mood;
+        }
+
+        // Save entry
+        function saveEntry() {
+            const text = document.getElementById('entry-text').value.trim();
+            if (!text) {
+                showNotification('Please write something before saving!', 'warning');
+                return;
+            }
+
+            const now = new Date();
+            const dateKey = now.toDateString();
+            
+            const entry = {
+                id: currentEntry ? currentEntry.id : Date.now(),
+                date: now.toISOString(),
+                text: text,
+                mood: selectedMood || '😊',
+                wordCount: text.split(/\s+/).length
+            };
+
+            if (currentEntry) {
+                const index = entries.findIndex(e => e.id === currentEntry.id);
+                entries[index] = entry;
+                showNotification('Entry updated successfully!', 'success');
+            } else {
+                entries.unshift(entry);
+                showNotification('Entry saved successfully!', 'success');
+            }
+
+            localStorage.setItem('diaryEntries', JSON.stringify(entries));
+            loadEntries();
+            updateStatistics();
+            generateCalendar();
+            generateWordCloud();
+            currentEntry = entry;
+        }
+
+        // Auto-save functionality
+        function autoSave() {
+            const text = document.getElementById('entry-text').value.trim();
+            if (text && text.length > 10) {
+                saveEntry();
+            }
+        }
+
+        // Create new entry
+        function newEntry() {
+            document.getElementById('entry-text').value = '';
+            document.querySelectorAll('.mood-btn').forEach(btn => btn.classList.remove('active'));
+            selectedMood = null;
+            currentEntry = null;
+            document.getElementById('entry-text').focus();
+        }
+
+        // Delete current entry
+        function deleteEntry() {
+            if (!currentEntry) {
+                showNotification('No entry selected to delete!', 'warning');
+                return;
+            }
+
+            if (confirm('Are you sure you want to delete this entry?')) {
+                entries = entries.filter(e => e.id !== currentEntry.id);
+                localStorage.setItem('diaryEntries', JSON.stringify(entries));
+                newEntry();
+                loadEntries();
+                updateStatistics();
+                generateCalendar();
+                generateWordCloud();
+                showNotification('Entry deleted successfully!', 'success');
+            }
+        }
+
+        // Load and display entries
+        function loadEntries() {
+            const container = document.getElementById('entries-list');
+            container.innerHTML = '';
+
+            entries.forEach(entry => {
+                const entryElement = document.createElement('div');
+                entryElement.className = 'entry-item fade-in';
+                entryElement.onclick = () => loadEntry(entry);
+                
+                const date = new Date(entry.date);
+                const preview = entry.text.substring(0, 100) + (entry.text.length > 100 ? '...' : '');
+                
+                entryElement.innerHTML = `
+                    <div class="entry-date">${date.toLocaleDateString()}</div>
+                    <div class="entry-preview">${preview}</div>
+                    <span class="entry-mood">${entry.mood}</span>
+                `;
+                
+                container.appendChild(entryElement);
+            });
+        }
+
+        // Load specific entry
+        function loadEntry(entry) {
+            currentEntry = entry;
+            document.getElementById('entry-text').value = entry.text;
+            
+            // Select the mood
+            document.querySelectorAll('.mood-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.mood === entry.mood) {
+                    btn.classList.add('active');
+                    selectedMood = entry.mood;
+                }
+            });
+        }
+
+        // Search entries
+        function searchEntries(query) {
+            const container = document.getElementById('entries-list');
+            const filteredEntries = entries.filter(entry => 
+                entry.text.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            container.innerHTML = '';
+            filteredEntries.forEach(entry => {
+                const entryElement = document.createElement('div');
+                entryElement.className = 'entry-item fade-in';
+                entryElement.onclick = () => loadEntry(entry);
+                
+                const date = new Date(entry.date);
+                const preview = entry.text.substring(0, 100) + (entry.text.length > 100 ? '...' : '');
+                
+                entryElement.innerHTML = `
+                    <div class="entry-date">${date.toLocaleDateString()}</div>
+                    <div class="entry-preview">${preview}</div>
+                    <span class="entry-mood">${entry.mood}</span>
+                `;
+                
+                container.appendChild(entryElement);
+            });
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            const totalEntries = entries.length;
+            const totalWords = entries.reduce((sum, entry) => sum + entry.wordCount, 0);
+            const uniqueDays = new Set(entries.map(entry => new Date(entry.date).toDateString())).size;
+            
+            // Calculate streak
+            let streak = 0;
+            const today = new Date();
+            const dates = entries.map(entry => new Date(entry.date).toDateString()).sort();
+            const uniqueDates = [...new Set(dates)].reverse();
+            
+            for (let i = 0; i < uniqueDates.length; i++) {
+                const date = new Date(uniqueDates[i]);
+                const expectedDate = new Date(today);
+                expectedDate.setDate(today.getDate() - i);
+                
+                if (date.toDateString() === expectedDate.toDateString()) {
+                    streak++;
+                } else {
+                    break;
+                }
+            }
+
+            document.getElementById('total-entries').textContent = totalEntries;
+            document.getElementById('words-written').textContent = totalWords.toLocaleString();
+            document.getElementById('days-active').textContent = uniqueDays;
+            document.getElementById('streak-count').textContent = streak;
+        }
+
+        // Generate calendar
+        function generateCalendar() {
+            const container = document.getElementById('calendar');
+            container.innerHTML = '';
+            
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+            
+            // Get first day of month and number of days
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            
+            // Create empty cells for days before month starts
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day';
+                container.appendChild(emptyDay);
+            }
+            
+            // Create days of the month
+            const entryDates = new Set(entries.map(entry => new Date(entry.date).toDateString()));
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                dayElement.textContent = day;
+                
+                const dayDate = new Date(currentYear, currentMonth, day);
+                if (entryDates.has(dayDate.toDateString())) {
+                    dayElement.classList.add('has-entry');
+                }
+                
+                dayElement.onclick = () => {
+                    const dayEntries = entries.filter(entry => 
+                        new Date(entry.date).toDateString() === dayDate.toDateString()
+                    );
+                    if (dayEntries.length > 0) {
+                        loadEntry(dayEntries[0]);
+                    }
+                };
+                
+                container.appendChild(dayElement);
+            }
+        }
+
+        // Generate word cloud
+        function generateWordCloud() {
+            const container = document.getElementById('word-cloud');
+            container.innerHTML = '';
+            
+            if (entries.length === 0) return;
+            
+            // Extract and count words
+            const wordCount = {};
+            const commonWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'this', 'that', 'these', 'those', 'my', 'your', 'his', 'her', 'its', 'our', 'their']);
+            
+            entries.forEach(entry => {
+                const words = entry.text.toLowerCase().match(/\b\w+\b/g) || [];
+                words.forEach(word => {
+                    if (word.length > 3 && !commonWords.has(word)) {
+                        wordCount[word] = (wordCount[word] || 0) + 1;
+                    }
+                });
+            });
+            
+            // Sort words by frequency and take top 15
+            const topWords = Object.entries(wordCount)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 15);
+            
+            topWords.forEach(([word, count]) => {
+                const wordElement = document.createElement('span');
+                wordElement.className = 'word-tag';
+                wordElement.textContent = `${word} (${count})`;
+                wordElement.onclick = () => searchEntries(word);
+                container.appendChild(wordElement);
+            });
+        }
+
+        // Update word count as user types
+        function updateWordCount() {
+            const text = document.getElementById('entry-text').value;
+            // Could add a word counter display here if desired
+        }
+
+        // Export diary functionality
+        function exportDiary() {
+            if (entries.length === 0) {
+                showNotification('No entries to export!', 'warning');
+                return;
+            }
+            
+            let exportContent = `Ethereal Diary Export\n`;
+            exportContent += `Generated on: ${new Date().toLocaleDateString()}\n`;
+            exportContent += `Total Entries: ${entries.length}\n`;
+            exportContent += `Total Words: ${entries.reduce((sum, entry) => sum + entry.wordCount, 0)}\n\n`;
+            exportContent += `${'='.repeat(50)}\n\n`;
+            
+            entries.reverse().forEach(entry => {
+                const date = new Date(entry.date);
+                exportContent += `Date: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}\n`;
+                exportContent += `Mood: ${entry.mood}\n`;
+                exportContent += `Words: ${entry.wordCount}\n\n`;
+                exportContent += `${entry.text}\n\n`;
+                exportContent += `${'-'.repeat(30)}\n\n`;
+            });
+            
+            entries.reverse(); // Restore original order
+            
+            const blob = new Blob([exportContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `diary_export_${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showNotification('Diary exported successfully!', 'success');
+        }
+
+        // Show notifications
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Handle window resize for Three.js
+        window.addEventListener('resize', () => {
+            if (camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 's':
+                        e.preventDefault();
+                        saveEntry();
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        newEntry();
+                        break;
+                    case 'e':
+                        e.preventDefault();
+                        exportDiary();
+                        break;
+                }
+            }
+        });
+
+        // Enhanced visual effects
+        function createRippleEffect(x, y) {
+            const ripple = document.createElement('div');
+            ripple.style.position = 'fixed';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.style.width = '20px';
+            ripple.style.height = '20px';
+            ripple.style.background = 'rgba(255, 255, 255, 0.6)';
+            ripple.style.borderRadius = '50%';
+            ripple.style.transform = 'translate(-50%, -50%)';
+            ripple.style.pointerEvents = 'none';
+            ripple.style.zIndex = '1000';
+            ripple.style.animation = 'ripple 0.6s ease-out forwards';
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes ripple {
+                    to {
+                        transform: translate(-50%, -50%) scale(4);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            document.body.appendChild(ripple);
+            
+            setTimeout(() => {
+                document.body.removeChild(ripple);
+                document.head.removeChild(style);
+            }, 600);
+        }
+
+        // Add ripple effect to clickable elements
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('control-btn') || 
+                e.target.classList.contains('mood-btn') || 
+                e.target.classList.contains('export-btn')) {
+                createRippleEffect(e.clientX, e.clientY);
+            }
+        });
+
+        // Typing animation for placeholder
+        function animatePlaceholder() {
+            const textarea = document.getElementById('entry-text');
+            const placeholders = [
+                "Pour your heart out... What's on your mind today?",
+                "Capture this moment in words...",
+                "What story does today tell?",
+                "Let your thoughts flow like a gentle stream...",
+                "This is your safe space. Write freely...",
+                "What emotions are painting your day?",
+                "Chronicle your journey, one word at a time...",
+                "What wisdom did today bring you?"
+            ];
+            
+            let currentIndex = 0;
+            setInterval(() => {
+                if (textarea.value === '') {
+                    textarea.placeholder = placeholders[currentIndex];
+                    currentIndex = (currentIndex + 1) % placeholders.length;
+                }
+            }, 4000);
+        }
+
+        // Initialize placeholder animation
+        setTimeout(animatePlaceholder, 2000);
+
+        // Add breathing animation to main elements
+        function addBreathingAnimation() {
+            const elements = document.querySelectorAll('.glass-morphism');
+            elements.forEach((el, index) => {
+                el.style.animation = `breathe 4s ease-in-out infinite ${index * 0.5}s`;
+            });
+            
+            const breatheStyle = document.createElement('style');
+            breatheStyle.textContent = `
+                @keyframes breathe {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.02); }
+                }
+            `;
+            document.head.appendChild(breatheStyle);
+        }
+
+        // Initialize breathing animation after a delay
+        setTimeout(addBreathingAnimation, 3000);
+
+        // Enhanced particle system
+        function createInteractiveParticles() {
+            document.addEventListener('mousemove', (e) => {
+                if (Math.random() < 0.1) { // 10% chance to create particle
+                    const particle = document.createElement('div');
+                    particle.style.position = 'fixed';
+                    particle.style.left = e.clientX + 'px';
+                    particle.style.top = e.clientY + 'px';
+                    particle.style.width = '3px';
+                    particle.style.height = '3px';
+                    particle.style.background = 'rgba(255, 255, 255, 0.8)';
+                    particle.style.borderRadius = '50%';
+                    particle.style.pointerEvents = 'none';
+                    particle.style.zIndex = '5';
+                    particle.style.animation = 'mouseParticle 2s ease-out forwards';
+                    
+                    document.body.appendChild(particle);
+                    
+                    setTimeout(() => {
+                        if (document.body.contains(particle)) {
+                            document.body.removeChild(particle);
+                        }
+                    }, 2000);
+                }
+            });
+            
+            const mouseParticleStyle = document.createElement('style');
+            mouseParticleStyle.textContent = `
+                @keyframes mouseParticle {
+                    0% {
+                        transform: translate(-50%, -50%) scale(1);
+                        opacity: 1;
+                    }
+                    100% {
+                        transform: translate(-50%, -50%) scale(0) translateY(-50px);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(mouseParticleStyle);
+        }
+
+        // Initialize interactive particles
+        setTimeout(createInteractiveParticles, 1000);
+
+        // Enhanced mood tracking with analytics
+        function getMoodAnalytics() {
+            const moodCounts = {};
+            entries.forEach(entry => {
+                moodCounts[entry.mood] = (moodCounts[entry.mood] || 0) + 1;
+            });
+            
+            return Object.entries(moodCounts)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 3);
+        }
+
+        // Advanced search with highlighting
+        function advancedSearch(query) {
+            const results = entries.filter(entry => {
+                const text = entry.text.toLowerCase();
+                const searchTerms = query.toLowerCase().split(' ');
+                return searchTerms.every(term => text.includes(term));
+            });
+            
+            return results.map(entry => ({
+                ...entry,
+                highlightedText: highlightSearchTerms(entry.text, query)
+            }));
+        }
+
+        function highlightSearchTerms(text, query) {
+            const terms = query.split(' ').filter(term => term.length > 0);
+            let highlightedText = text;
+            
+            terms.forEach(term => {
+                const regex = new RegExp(`(${term})`, 'gi');
+                highlightedText = highlightedText.replace(regex, '<mark>$1</mark>');
+            });
+            
+            return highlightedText;
+        }
+
+        // Data insights and trends
+        function generateInsights() {
+            if (entries.length < 3) return [];
+            
+            const insights = [];
+            
+            // Writing frequency insight
+            const avgWordsPerEntry = entries.reduce((sum, entry) => sum + entry.wordCount, 0) / entries.length;
+            insights.push({
+                type: 'writing',
+                message: `You write an average of ${Math.round(avgWordsPerEntry)} words per entry.`
+            });
+            
+            // Mood insight
+            const topMoods = getMoodAnalytics();
+            if (topMoods.length > 0) {
+                insights.push({
+                    type: 'mood',
+                    message: `Your most common mood is ${topMoods[0][0]} (${topMoods[0][1]} times).`
+                });
+            }
+            
+            // Time insight
+            const recentEntries = entries.slice(0, 7);
+            const recentWords = recentEntries.reduce((sum, entry) => sum + entry.wordCount, 0);
+            insights.push({
+                type: 'trend',
+                message: `You've written ${recentWords} words in your last 7 entries.`
+            });
+            
+            return insights;
+        }
+
+        // Privacy and security features
+        function hashEntry(text) {
+            // Simple hash function for privacy (in a real app, use proper encryption)
+            let hash = 0;
+            for (let i = 0; i < text.length; i++) {
+                const char = text.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32-bit integer
+            }
+            return hash;
+        }
+
+        // Backup functionality
+        function createBackup() {
+            const backup = {
+                timestamp: new Date().toISOString(),
+                entries: entries,
+                version: '1.0'
+            };
+            
+            const backupData = JSON.stringify(backup, null, 2);
+            const blob = new Blob([backupData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `diary_backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showNotification('Backup created successfully!', 'success');
+        }
+
+        // Theme customization (could be extended)
+        function applyCustomTheme(theme) {
+            const root = document.documentElement;
+            switch(theme) {
+                case 'sunset':
+                    root.style.setProperty('--primary-gradient', 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%)');
+                    break;
+                case 'ocean':
+                    root.style.setProperty('--primary-gradient', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)');
+                    break;
+                case 'forest':
+                    root.style.setProperty('--primary-gradient', 'linear-gradient(135deg, #5f7c5f 0%, #9eb49e 100%)');
+                    break;
+            }
+        }
+
+        // Initialize default theme
+        applyCustomTheme('ocean');
+
+        // Welcome message for new users
+        if (entries.length === 0) {
+            setTimeout(() => {
+                showNotification('Welcome to your Ethereal Diary! Start writing your first entry.', 'info');
+            }, 2000);
+        }
+
+        // Performance optimization
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Debounced search
+        const debouncedSearch = debounce(searchEntries, 300);
+
+        // Update search input to use debounced version
+        document.querySelector('.search-box').oninput = function() {
+            debouncedSearch(this.value);
+        };
+
+        console.log('🌟 Ethereal Diary initialized successfully! 🌟');
+        console.log('📖 Your digital sanctuary is ready for your thoughts and dreams.');
+    </script>
+</body>
+</html>
